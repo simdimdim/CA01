@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "hatch",
+    "octonions-rs",
+    "engine",
+    "graphics"
+]
