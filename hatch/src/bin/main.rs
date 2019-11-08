@@ -1,3 +1,6 @@
+use engine::Engine;
 fn main() {
-    println!("Hello, world!");
+    let engine = Engine::new();
+    engine.run();
+    println!("Goodbye");
 }
