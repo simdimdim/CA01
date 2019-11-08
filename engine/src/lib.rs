@@ -37,7 +37,6 @@ impl Engine {
             });
             self.graphics.render(recreate_swapchain);
             if done {
-                println!("We're done.");
                 return;
             }
         }
