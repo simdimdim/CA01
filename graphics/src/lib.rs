@@ -8,7 +8,7 @@ use vulkano::{
         DynamicState,
     },
     device::{Device, DeviceExtensions, Queue},
-    format::ClearValue,
+    format::{ClearValue, Format::D16Unorm},
     framebuffer::{
         Framebuffer,
         FramebufferAbstract,
@@ -16,7 +16,7 @@ use vulkano::{
         RenderPassAbstract,
         Subpass,
     },
-    image::SwapchainImage,
+    image::{attachment::AttachmentImage, SwapchainImage},
     instance::{Instance, PhysicalDevice},
     pipeline::{viewport::Viewport, GraphicsPipeline, GraphicsPipelineAbstract},
     swapchain::{
@@ -37,35 +37,20 @@ use vulkano::{
 use vulkano_win::VkSurfaceBuild;
 use winit::{EventsLoop, Window, WindowBuilder};
 
-mod vs {
-    vulkano_shaders::shader! {
-        ty: "vertex",
-        src: "
-#version 450
-layout(location = 0) in vec3 position;
-layout(location = 1) out vec3 color;
-
-void main() {
-    gl_Position = vec4 (position,1.0);
-    color= position;
+mod cs {
+    vulkano_shaders::shader! {ty: "compute", path: "shaders/comp.glsl"}
 }
-"
-    }
+mod vs {
+    vulkano_shaders::shader! {ty: "vertex", path:
+    "shaders/vert.glsl"}
 }
 mod fs {
-    vulkano_shaders::shader! {
-        ty: "fragment",
-        src: "
-#version 450
-layout(location = 0) out vec4 f_color;
-layout(location = 1) in vec3 color;
-
-layout(origin_upper_left) in vec4 gl_FragCoord;
-void main() {
-f_color = vec4(normalize(color),1.0);
+    vulkano_shaders::shader! {ty: "fragment", path:
+    "shaders/frag.glsl"}
 }
-"
-    }
+#[derive(Default, Debug, Clone)]
+struct Vertex {
+    position: [f32; 3],
 }
 pub struct Graphics {
     instance:           Arc<Instance>,
@@ -86,10 +71,6 @@ pub struct Graphics {
      * command_buffer:     Arc<AutoCommandBuffer>, */
 }
 
-#[derive(Default, Debug, Clone)]
-struct Vertex {
-    position: [f32; 3],
-}
 impl Graphics {
     pub fn new(events_loop: &EventsLoop) -> Self {
         let instance = {
@@ -122,7 +103,6 @@ impl Graphics {
         .unwrap();
         let queue = queues.next().unwrap();
         let dimensions = {
-            //  returns early here, thanks mr ?
             let logical_dimensions = surface
                 .window()
                 .get_inner_size()
@@ -157,24 +137,34 @@ impl Graphics {
             .unwrap()
         };
         let render_pass = Arc::new(
-            vulkano::single_pass_renderpass!(
-                device.clone(),
+            vulkano::single_pass_renderpass!(device.clone(),
                 attachments: {
                     color: {
                         load: Clear,
                         store: Store,
                         format: swapchain.format(),
                         samples: 1,
+                    },
+                    depth: {
+                        load: Clear,
+                        store: DontCare,
+                        format: D16Unorm,
+                        samples: 1,
                     }
                 },
                 pass: {
                     color: [color],
-                    depth_stencil: {}
+                    depth_stencil: {depth}
                 }
             )
             .unwrap(),
         );
-
+        let depth_buffer = AttachmentImage::transient(
+            queue.device().clone(),
+            dimensions,
+            D16Unorm,
+        )
+        .unwrap();
         let mut dynamic_state = DynamicState {
             line_width:   None,
             viewports:    None,
@@ -187,6 +177,7 @@ impl Graphics {
             &images,
             render_pass.clone(),
             &mut dynamic_state,
+            device.clone(),
         );
         let previous_frame_end = Some(Self::create_sync_objects(&device));
         Self {
@@ -211,12 +202,14 @@ impl Graphics {
     ) {
         let vs = vs::Shader::load(self.device.clone()).unwrap();
         let fs = fs::Shader::load(self.device.clone()).unwrap();
+
         let pipeline = Arc::new(
             GraphicsPipeline::start()
                 .vertex_input_single_buffer()
                 .vertex_shader(vs.main_entry_point(), ())
                 .triangle_list()
                 .viewports_dynamic_scissors_irrelevant(1)
+                .depth_stencil_simple_depth()
                 .fragment_shader(fs.main_entry_point(), ())
                 .render_pass(Subpass::from(self.render_pass.clone(), 0).unwrap())
                 .build(self.device.clone())
@@ -243,6 +236,7 @@ impl Graphics {
                 &self.images,
                 self.render_pass.clone(),
                 &mut self.dynamic_state,
+                self.device.clone(),
             );
         };
         let (image_num, acquire_future) =
@@ -254,7 +248,7 @@ impl Graphics {
                 }
                 Err(err) => panic!("{:?}", err),
             };
-        let clear_values = vec![[0.0, 0.0, 0.0, 0.0].into()];
+        let clear_values = vec![[0.0, 0.0, 0.0, 0.0].into(), 1f32.into()];
         let vertex_buffer = {
             vulkano::impl_vertex!(Vertex, position);
             CpuAccessibleBuffer::from_iter(
@@ -352,6 +346,7 @@ fn window_size_dependent_setup(
     images: &[Arc<SwapchainImage<Window>>],
     render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     dynamic_state: &mut DynamicState,
+    device: Arc<Device>,
 ) -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
     let dimensions = images[0].dimensions();
 
@@ -365,9 +360,14 @@ fn window_size_dependent_setup(
     images
         .iter()
         .map(|image| {
+            let depth_buffer =
+                AttachmentImage::transient(device.clone(), dimensions, D16Unorm)
+                    .unwrap();
             Arc::new(
                 Framebuffer::start(render_pass.clone())
                     .add(image.clone())
+                    .unwrap()
+                    .add(depth_buffer.clone())
                     .unwrap()
                     .build()
                     .unwrap(),

@@ -1,6 +1,6 @@
 [package]
 name = "graphics"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["simdimdim <simdimdim@gmail.com>"]
 edition = "2018"
 publish = false
@@ -14,3 +14,4 @@ vulkano-win={git="https://github.com/vulkano-rs/vulkano"}
 vulkano-shaders={git="https://github.com/vulkano-rs/vulkano"}
 vk-sys ={git = "https://github.com/vulkano-rs/vulkano", branch = "master" }
 shaderc-sys = { version= "^0.6"}
+common={path="../common"}

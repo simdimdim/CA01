@@ -9,5 +9,5 @@ publish = false
 
 [dependencies]
 graphics= { path = "../graphics" }
-octonions-rs= { path = "../octonions-rs" }
+common= { path = "../common" }
 winit = "0.19"
