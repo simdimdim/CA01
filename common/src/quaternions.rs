@@ -1,6 +1,7 @@
-use crate::Quaternion;
-use num_traits::{Float, One, Zero};
-use std::ops::{Add, Mul, Sub};
+use crate::{Octonion, Quaternion, WhichFloat};
+use num_traits::{identities::One, Float, Zero};
+use std::ops::{Add, Div, Mul, Sub};
+use vulkano::pipeline::vertex::{VertexMember, VertexMemberTy};
 
 impl<T: Float> Quaternion<T> {
     pub fn new(i: [T; 4]) -> Self { Self { val: i } }
@@ -37,6 +38,17 @@ impl<T: Float> Quaternion<T> {
         self
     }
 
+    pub fn n(mut self) -> Self {
+        self = self / (T::one() + T::one());
+        self
+    }
+
+    pub fn to_vec(&self) -> Vec<T> {
+        let mut v = Vec::<T>::with_capacity(4);
+        v.copy_from_slice(&self.val);
+        v
+    }
+
     pub fn dot(
         self,
         b: Quaternion<T>,
@@ -48,6 +60,29 @@ impl<T: Float> Quaternion<T> {
             .fold(T::zero(), |res, val| res + val)
     }
 }
+
+unsafe impl<T: Float + WhichFloat> VertexMember for Quaternion<T> {
+    fn format() -> (VertexMemberTy, usize) { (T::vmt(), T::vms()) }
+}
+
+impl<T: Float> One for Quaternion<T> {
+    fn one() -> Self { Self { val: [T::one(); 4] } }
+}
+impl<T: Float> Zero for Quaternion<T> {
+    fn zero() -> Self {
+        Self {
+            val: [T::zero(); 4],
+        }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.val[0] == T::zero() &&
+            self.val[1] == T::zero() &&
+            self.val[2] == T::zero() &&
+            self.val[3] == T::zero()
+    }
+}
+
 impl<T: Float> Mul<T> for Quaternion<T> {
     type Output = Quaternion<T>;
 
@@ -79,6 +114,16 @@ impl<T: Float> Mul<Quaternion<T>> for Quaternion<T> {
         Quaternion {
             val: [a - b - c - d, a + b + c - d, a - b + c + d, a + b - c + d],
         }
+    }
+}
+impl<T: Float> Mul<Octonion<T>> for Quaternion<T> {
+    type Output = Quaternion<T>;
+
+    fn mul(
+        self,
+        rhs: Octonion<T>,
+    ) -> Quaternion<T> {
+        self * rhs.q1
     }
 }
 
@@ -152,20 +197,36 @@ impl<T: Float> Sub<Quaternion<T>> for Quaternion<T> {
     }
 }
 
-impl<T: Float> One for Quaternion<T> {
-    fn one() -> Self { Self { val: [T::one(); 4] } }
-}
-impl<T: Float> Zero for Quaternion<T> {
-    fn zero() -> Self {
-        Self {
-            val: [T::zero(); 4],
+impl<T: Float> Div<T> for Quaternion<T> {
+    type Output = Quaternion<T>;
+
+    fn div(
+        self,
+        rhs: T,
+    ) -> Quaternion<T> {
+        Quaternion {
+            val: [
+                self.val[0] / rhs,
+                self.val[1] / rhs,
+                self.val[2] / rhs,
+                self.val[3] / rhs,
+            ],
         }
     }
-
-    fn is_zero(&self) -> bool {
-        self.val[0] == T::zero() &&
-            self.val[1] == T::zero() &&
-            self.val[2] == T::zero() &&
-            self.val[3] == T::zero()
-    }
 }
+// impl<T: Float> Div<Quaternion<T>> for Quaternion<T> {
+//     type Output = Quaternion<T>;
+//
+//     fn div(
+//         self,
+//         rhs: Quaternion<T>,
+//     ) -> Quaternion<T> {
+//         let a = self.val[0] / rhs.val[0];
+//         let b = self.val[1] / rhs.val[1];
+//         let c = self.val[2] / rhs.val[2];
+//         let d = self.val[3] / rhs.val[3];
+//         Quaternion {
+//             val: [a - b - c - d, a + b + c - d, a - b + c + d, a + b - c +
+// d],         }
+//     }
+// }

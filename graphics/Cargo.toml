@@ -13,5 +13,5 @@ vulkano={git="https://github.com/vulkano-rs/vulkano"}
 vulkano-win={git="https://github.com/vulkano-rs/vulkano"}
 vulkano-shaders={git="https://github.com/vulkano-rs/vulkano"}
 vk-sys ={git = "https://github.com/vulkano-rs/vulkano", branch = "master" }
-shaderc-sys = { version= "^0.6"}
 common={path="../common"}
+num-traits="*"

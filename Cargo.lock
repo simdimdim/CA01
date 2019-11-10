@@ -130,6 +130,8 @@ name = "common"
 version = "0.1.0"
 dependencies = [
  "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
+ "vulkano 0.16.0 (git+https://github.com/vulkano-rs/vulkano)",
+ "vulkano-shaders 0.16.0 (git+https://github.com/vulkano-rs/vulkano)",
 ]
 
 [[package]]
@@ -268,7 +270,7 @@ name = "graphics"
 version = "0.1.1"
 dependencies = [
  "common 0.1.0",
- "shaderc-sys 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "vk-sys 0.5.0 (git+https://github.com/vulkano-rs/vulkano)",
  "vulkano 0.16.0 (git+https://github.com/vulkano-rs/vulkano)",
  "vulkano-shaders 0.16.0 (git+https://github.com/vulkano-rs/vulkano)",
@@ -640,7 +642,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "vk-sys"
 version = "0.5.0"
-source = "git+https://github.com/vulkano-rs/vulkano#1b2a39d3b0c203237996aeb05b4326c458896221"
+source = "git+https://github.com/vulkano-rs/vulkano#0320e75f97789470bd0d05817cb37ba11753d6a2"
 
 [[package]]
 name = "void"
@@ -650,7 +652,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "vulkano"
 version = "0.16.0"
-source = "git+https://github.com/vulkano-rs/vulkano#1b2a39d3b0c203237996aeb05b4326c458896221"
+source = "git+https://github.com/vulkano-rs/vulkano#0320e75f97789470bd0d05817cb37ba11753d6a2"
 dependencies = [
  "crossbeam 0.7.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "fnv 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -664,7 +666,7 @@ dependencies = [
 [[package]]
 name = "vulkano-shaders"
 version = "0.16.0"
-source = "git+https://github.com/vulkano-rs/vulkano#1b2a39d3b0c203237996aeb05b4326c458896221"
+source = "git+https://github.com/vulkano-rs/vulkano#0320e75f97789470bd0d05817cb37ba11753d6a2"
 dependencies = [
  "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -675,7 +677,7 @@ dependencies = [
 [[package]]
 name = "vulkano-win"
 version = "0.16.0"
-source = "git+https://github.com/vulkano-rs/vulkano#1b2a39d3b0c203237996aeb05b4326c458896221"
+source = "git+https://github.com/vulkano-rs/vulkano#0320e75f97789470bd0d05817cb37ba11753d6a2"
 dependencies = [
  "cocoa 0.19.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "metal 0.17.0 (registry+https://github.com/rust-lang/crates.io-index)",
