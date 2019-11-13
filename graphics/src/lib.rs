@@ -194,7 +194,7 @@ impl Graphics {
     pub fn render(
         &mut self,
         remake_swap: bool,
-        mouse: (f64, f64),
+        mouse: [f64; 2],
     ) {
         self.recreate_swapchain = remake_swap;
         self.remake_swapchain();
@@ -245,8 +245,8 @@ impl Graphics {
             }
             x[2].position[0..2].copy_from_slice(
                 &vec![
-                    mouse.0 as f32 / self.dimensions[0] as f32 * 2.0 - 1.0f32,
-                    mouse.1 as f32 / self.dimensions[1] as f32 * 2.0 - 1.0f32,
+                    mouse[0] as f32 / self.dimensions[0] as f32 * 2.0 - 1.0f32,
+                    mouse[1] as f32 / self.dimensions[1] as f32 * 2.0 - 1.0f32,
                 ][0..2],
             );
             x
@@ -433,7 +433,7 @@ fn data_buffer_setup(device: Arc<Device>) {
     CpuAccessibleBuffer::from_iter(
         device.clone(),
         BufferUsage::all(),
-        e.model.iter().copied(),
+        e.model.mesh.iter().copied(),
     )
     .expect("failed to create buffer");
 }

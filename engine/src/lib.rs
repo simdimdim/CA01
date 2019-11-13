@@ -1,29 +1,36 @@
+pub mod world;
+use crate::world::World;
+use common::Entity;
 use graphics::Graphics;
+use num_traits::Float;
 use winit::{Event, EventsLoop, WindowEvent};
-pub struct Engine {
+
+pub struct Engine<T: Float> {
     events_loop: EventsLoop,
-    graphics:    Graphics,
+    graphics: Graphics,
+    mouse: [f64; 2],
+    world: World<T>,
 }
 
-impl Default for Engine {
-    fn default() -> Self { Self::new() }
-}
-
-impl Engine {
+impl<T: Float> Engine<T> {
     pub fn new() -> Self {
         let events_loop = EventsLoop::new();
         let graphics = Graphics::new(&events_loop);
+        let mouse = [0.0f64; 2];
+        let world = Self::create_world();
         Self {
             events_loop,
             graphics,
+            mouse,
+            world,
         }
     }
 
     pub fn run(mut self) {
-        let mut mouse: (f64, f64) = (0.0, 0.0);
         loop {
             let mut done = false;
             let mut recreate_swapchain = false;
+            let mut mouse = [0.0f64; 2];
             self.events_loop.poll_events(|ev| match ev {
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
@@ -36,13 +43,21 @@ impl Engine {
                 Event::WindowEvent {
                     event: WindowEvent::CursorMoved { position, .. },
                     ..
-                } => mouse = (position.x, position.y),
+                } => mouse = [position.x, position.y],
                 _ => (),
             });
-            self.graphics.render(recreate_swapchain, mouse);
+            if mouse != [0.0f64, 0.0f64] {
+                self.mouse = mouse;
+            }
+            self.graphics.render(recreate_swapchain, self.mouse);
             if done {
                 return;
             }
         }
+    }
+    pub fn create_world() -> World<T> {
+        let world = World::<T>::new();
+        world.add_object(Entity::<T>::new());
+        world
     }
 }

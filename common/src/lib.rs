@@ -1,5 +1,6 @@
 #![deny(bare_trait_objects)]
 pub mod entity;
+pub mod mesh;
 pub mod octonions;
 pub mod quaternions;
 
@@ -15,12 +16,18 @@ pub struct Octonion<T: Float> {
     pub q1: Quaternion<T>,
     pub q2: Quaternion<T>,
 }
-#[derive(Default, Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Entity<T: Float> {
     pub pos: Octonion<T>,
     pub orient: Quaternion<T>,
-    pub model: Vec<[T; 3]>,
+    pub model: Mesh<T>,
 }
+#[derive(Clone, Debug, PartialEq)]
+pub struct Mesh<T: Float> {
+    pub rotator: Quaternion<T>,
+    pub mesh: Vec<[f32; 3]>,
+}
+
 pub trait WhichFloat: Float {
     fn vmt() -> VertexMemberTy;
     fn vms() -> usize;

@@ -1,5 +1,5 @@
 use engine::Engine;
 fn main() {
-    let engine = Engine::new();
+    let engine = Engine::<f32>::new();
     engine.run();
 }

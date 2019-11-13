@@ -11,3 +11,4 @@ publish = false
 graphics= { path = "../graphics" }
 common= { path = "../common" }
 winit = "0.19"
+num-traits="*"

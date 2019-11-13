@@ -4,11 +4,13 @@ use std::ops::{Add, Div, Mul, Sub};
 use vulkano::pipeline::vertex::{VertexMember, VertexMemberTy};
 
 impl<T: Float> Quaternion<T> {
-    pub fn new(i: [T; 4]) -> Self { Self { val: i } }
+    pub fn new(i: [T; 4]) -> Self {
+        Self { val: i }
+    }
 
     pub fn from_slice(inp: &[T]) -> Self {
         let mut q = Quaternion::zero();
-        q.val.copy_from_slice(inp);
+        q.val.copy_from_slice(&inp);
         q
     }
 
@@ -61,12 +63,22 @@ impl<T: Float> Quaternion<T> {
     }
 }
 
+impl<T: Float> From<[T; 3]> for Quaternion<T> {
+    fn from(inp: [T; 3]) -> Quaternion<T> {
+        Quaternion::from_slice(&inp)
+    }
+}
+
 unsafe impl<T: Float + WhichFloat> VertexMember for Quaternion<T> {
-    fn format() -> (VertexMemberTy, usize) { (T::vmt(), T::vms()) }
+    fn format() -> (VertexMemberTy, usize) {
+        (T::vmt(), T::vms())
+    }
 }
 
 impl<T: Float> One for Quaternion<T> {
-    fn one() -> Self { Self { val: [T::one(); 4] } }
+    fn one() -> Self {
+        Self { val: [T::one(); 4] }
+    }
 }
 impl<T: Float> Zero for Quaternion<T> {
     fn zero() -> Self {
@@ -76,10 +88,10 @@ impl<T: Float> Zero for Quaternion<T> {
     }
 
     fn is_zero(&self) -> bool {
-        self.val[0] == T::zero() &&
-            self.val[1] == T::zero() &&
-            self.val[2] == T::zero() &&
-            self.val[3] == T::zero()
+        self.val[0] == T::zero()
+            && self.val[1] == T::zero()
+            && self.val[2] == T::zero()
+            && self.val[3] == T::zero()
     }
 }
 
