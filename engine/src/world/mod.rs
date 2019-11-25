@@ -1,10 +1,8 @@
-use common::Entity;
-use common::Quaternion;
-use num_traits::Float;
-use num_traits::{identities::One, Zero};
+use common::{Entity, Quaternion};
+use num_traits::{Float, Zero};
 
 pub struct World<T: Float> {
-    origin: Quaternion<T>,
+    origin:  Quaternion<T>,
     objects: Vec<Entity<T>>,
 }
 
@@ -16,12 +14,14 @@ impl<T: Float> World<T> {
             objects,
         }
     }
+
     pub fn add_object(
         &self,
-        e: Entity<T>,
+        _e: Entity<T>,
     ) -> &Self {
         self
     }
+
     pub fn load_entities(
         &mut self,
         e: Vec<Entity<T>>,
@@ -30,8 +30,7 @@ impl<T: Float> World<T> {
         self.objects = e;
         self
     }
+
     pub fn save_world(&self) {}
 }
-pub fn load_world<T: Float>() -> World<T> {
-    World::new()
-}
+pub fn load_world<T: Float>() -> World<T> { World::new() }

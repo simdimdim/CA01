@@ -17,7 +17,7 @@ binop_separator = "Back"
 
 fn_single_line = true
 fn_args_layout="Vertical"
-fn_call_style = "Block"
+# fn_call_style = "Block"
 
 wrap_comments = true
 # format_code_in_doc_comments = true

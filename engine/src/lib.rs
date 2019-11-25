@@ -7,9 +7,9 @@ use winit::{Event, EventsLoop, WindowEvent};
 
 pub struct Engine<T: Float> {
     events_loop: EventsLoop,
-    graphics: Graphics,
-    mouse: [f64; 2],
-    world: World<T>,
+    graphics:    Graphics,
+    mouse:       [f64; 2],
+    world:       World<T>,
 }
 
 impl<T: Float> Engine<T> {
@@ -55,6 +55,7 @@ impl<T: Float> Engine<T> {
             }
         }
     }
+
     pub fn create_world() -> World<T> {
         let world = World::<T>::new();
         world.add_object(Entity::<T>::new());

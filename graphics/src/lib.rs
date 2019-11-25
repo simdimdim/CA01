@@ -1,26 +1,45 @@
 use common::{Entity, Quaternion};
 use num_traits::{Float, One, Zero};
 use std::sync::Arc;
-use vulkano::descriptor::descriptor_set::PersistentDescriptorSet;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
     command_buffer::{
-        AutoCommandBuffer, AutoCommandBufferBuilder, CommandBuffer, DynamicState,
+        AutoCommandBuffer,
+        AutoCommandBufferBuilder,
+        CommandBuffer,
+        DynamicState,
+    },
+    descriptor::{
+        descriptor_set::PersistentDescriptorSet,
+        pipeline_layout::PipelineLayoutAbstract,
     },
     device::{Device, DeviceExtensions, Queue},
     format::{ClearValue, Format::D16Unorm},
     framebuffer::{
-        Framebuffer, FramebufferAbstract, RenderPass, RenderPassAbstract, Subpass,
+        Framebuffer,
+        FramebufferAbstract,
+        RenderPass,
+        RenderPassAbstract,
+        Subpass,
     },
     image::{attachment::AttachmentImage, SwapchainImage},
     instance::{Instance, PhysicalDevice},
     pipeline::{
-        viewport::Viewport, ComputePipeline, GraphicsPipeline,
+        viewport::Viewport,
+        ComputePipeline,
+        GraphicsPipeline,
         GraphicsPipelineAbstract,
     },
     swapchain::{
-        self, acquire_next_image, AcquireError, ColorSpace, PresentMode, Surface,
-        SurfaceTransform, Swapchain, SwapchainAcquireFuture,
+        self,
+        acquire_next_image,
+        AcquireError,
+        ColorSpace,
+        PresentMode,
+        Surface,
+        SurfaceTransform,
+        Swapchain,
+        SwapchainAcquireFuture,
         SwapchainCreationError,
     },
     sync,
@@ -41,21 +60,21 @@ mod fs {
 #[derive(Default, Debug, Clone, Copy)]
 struct Vertex {
     position: [f32; 3],
-    orient: Quaternion<f32>,
+    orient:   [f32; 4],
 }
 pub struct Graphics {
-    instance: Arc<Instance>,
-    surface: Arc<Surface<Window>>,
-    device: Arc<Device>,
-    queue: Arc<Queue>,
-    render_pass: Arc<dyn RenderPassAbstract + Sync + Send>,
-    framebuffers: Vec<Arc<(dyn FramebufferAbstract + Send + Sync)>>,
-    swapchain: Arc<Swapchain<Window>>,
+    instance:           Arc<Instance>,
+    surface:            Arc<Surface<Window>>,
+    device:             Arc<Device>,
+    queue:              Arc<Queue>,
+    render_pass:        Arc<dyn RenderPassAbstract + Sync + Send>,
+    framebuffers:       Vec<Arc<(dyn FramebufferAbstract + Send + Sync)>>,
+    swapchain:          Arc<Swapchain<Window>>,
     previous_frame_end: Option<Box<dyn GpuFuture + Send + Sync>>,
     recreate_swapchain: bool,
-    dimensions: [u32; 2],
-    images: Vec<Arc<vulkano::image::SwapchainImage<winit::Window>>>,
-    dynamic_state: DynamicState,
+    dimensions:         [u32; 2],
+    images:             Vec<Arc<vulkano::image::SwapchainImage<winit::Window>>>,
+    dynamic_state:      DynamicState,
     /* pipeline:           Arc<dyn GraphicsPipelineAbstract + Sync + Send>,
      * vertex_buffer:      Vec<Arc<dyn BufferAccess + Send + Sync>>,
      * acquire_future:     SwapchainAcquireFuture<Window>,
@@ -84,14 +103,14 @@ impl Graphics {
                 q.supports_graphics() && surface.is_supported(q).unwrap_or(false)
             })
             .unwrap();
-        let device_ext = DeviceExtensions {
-            khr_swapchain: true,
-            ..DeviceExtensions::none()
-        };
         let (device, mut queues) = Device::new(
             physical,
             physical.supported_features(),
-            &device_ext,
+            &DeviceExtensions {
+                khr_swapchain: true,
+                khr_storage_buffer_storage_class: true,
+                ..DeviceExtensions::none()
+            },
             [(queue_family, 0.5)].iter().cloned(),
         )
         .unwrap();
@@ -106,8 +125,8 @@ impl Graphics {
                 .into();
             [dimensions.0, dimensions.1]
         };
-        let mut recreate_swapchain = false;
-        let (mut swapchain, images) = {
+        let recreate_swapchain = false;
+        let (swapchain, images) = {
             let caps = surface.capabilities(physical).unwrap();
             let usage = caps.supported_usage_flags;
             let alpha = caps.supported_composite_alpha.iter().next().unwrap();
@@ -154,21 +173,21 @@ impl Graphics {
             .unwrap(),
         );
         let mut dynamic_state = DynamicState {
-            line_width: None,
-            viewports: None,
-            scissors: None,
+            line_width:   None,
+            viewports:    None,
+            scissors:     None,
             compare_mask: None,
-            write_mask: None,
-            reference: None,
+            write_mask:   None,
+            reference:    None,
         };
-        let depth_buffer = AttachmentImage::transient(
+        let _depth_buffer = AttachmentImage::transient(
             queue.device().clone(),
             dimensions,
             D16Unorm,
         )
         .unwrap();
-        let data_buffer = data_buffer_setup(device.clone());
-        let mut framebuffers = window_size_dependent_setup(
+        let _data_buffer = data_buffer_setup(device.clone());
+        let framebuffers = window_size_dependent_setup(
             &images,
             render_pass.clone(),
             &mut dynamic_state,
@@ -198,7 +217,7 @@ impl Graphics {
     ) {
         self.recreate_swapchain = remake_swap;
         self.remake_swapchain();
-        // let cs = fs::Shader::load(self.device.clone()).unwrap();
+        let cs = cs::Shader::load(self.device.clone()).unwrap();
         let vs = vs::Shader::load(self.device.clone()).unwrap();
         let fs = fs::Shader::load(self.device.clone()).unwrap();
         let pipeline = Arc::new(
@@ -223,95 +242,74 @@ impl Graphics {
                 Err(err) => panic!("{:?}", err),
             };
         let clear_values = vec![[0.0, 0.0, 0.0, 0.0].into(), 1f32.into()];
-        let cube = {
-            let mut x = [Vertex {
-                position: [0.0f32, 0.0f32, 0.0f32],
-                orient: Quaternion::<f32>::one(),
-            }; 3];
-            let e = Entity::<f32>::new();
-            let z = [
-                [0.8, 0.8, 0.8],
-                [-0.8, 0.8, 0.1],
-                [0.5, -0.5, 0.5],
-                [0.5, 0.5, -0.5],
-                [-0.5, 0.5, -0.5],
-                [-0.5, -0.5, 0.5],
-                [0.5, -0.5, -0.5],
-                [-0.5, -0.5, -0.5],
-            ];
-            for i in 0..3 {
-                x[i].position.copy_from_slice(&z[i][0..3]);
-                x[i].orient.val.copy_from_slice(&e.orient.val);
+        let compute_pipeline = Arc::new(
+            ComputePipeline::new(
+                self.device.clone(),
+                &cs.main_entry_point(),
+                &(),
+            )
+            .expect("failed to create compute pipeline"),
+        );
+
+        let data_buffer = CpuAccessibleBuffer::from_iter(
+            self.device.clone(),
+            BufferUsage::all(),
+            {
+                let mut x = [Vertex {
+                    position: [0.0f32; 3],
+                    orient:   [0.0f32; 4],
+                }; 6];
+                let e = Entity::<f32>::new();
+                let z = [
+                    [0.8, 0.8, 0.8],
+                    [-0.8, 0.8, 0.1],
+                    [0.5, -0.5, 0.5],
+                    [0.5, 0.5, -0.5],
+                    [-0.5, 0.5, -0.5],
+                    [-0.5, -0.5, 0.5],
+                ];
+                for i in 0..6 {
+                    x[i].position.copy_from_slice(&z[i][0..3]);
+                }
+                x[2].orient[0..2].copy_from_slice(
+                    &vec![
+                        mouse[0] as f32 / self.dimensions[0] as f32 * 2.0 -
+                            1.0f32,
+                        mouse[1] as f32 / self.dimensions[1] as f32 * 2.0 -
+                            1.0f32,
+                    ][0..2],
+                );
+                x[2].orient = Quaternion::new(x[2].orient).u_mut().val;
+                x
             }
-            x[2].position[0..2].copy_from_slice(
-                &vec![
-                    mouse[0] as f32 / self.dimensions[0] as f32 * 2.0 - 1.0f32,
-                    mouse[1] as f32 / self.dimensions[1] as f32 * 2.0 - 1.0f32,
-                ][0..2],
-            );
-            x
-        };
-        // let compute_pipeline = Arc::new(
-        //     ComputePipeline::new(
-        //         self.device.clone(),
-        //         &cs.main_entry_point(),
-        //         &(),
-        //     )
-        //     .expect("failed to create compute pipeline"),
-        // );
-        //
-        // let data_buffer = CpuAccessibleBuffer::from_iter(
-        //     self.device.clone(),
-        //     BufferUsage::all(),
-        //     {
-        //         let mut x = [Vertex {
-        //             position: [0.0f32, 0.0f32, 0.0f32],
-        //             orient: Quaternion::<f32>::one(),
-        //         }; 8];
-        //         let e = Entity::<f32>::new();
-        //         let z = [
-        //             [0.8, 0.8, 0.8],
-        //             [-0.8, 0.8, 0.1],
-        //             [0.5, -0.5, 0.5],
-        //             [0.5, 0.5, -0.5],
-        //             [-0.5, 0.5, -0.5],
-        //             [-0.5, -0.5, 0.5],
-        //             [0.5, -0.5, -0.5],
-        //             [-0.5, -0.5, -0.5],
-        //         ];
-        //         for i in 0..8 {
-        //             x[i].position.copy_from_slice(&z[i][0..3]);
-        //             x[i].orient.val.copy_from_slice(&e.orient.val);
-        //         }
-        //         x
-        //     }
-        //     .iter()
-        //     .cloned(),
-        // )
-        // .expect("Failed to create data_buffer");
-        // let set = Arc::new(
-        //     PersistentDescriptorSet::start(compute_pipeline.clone(), 0)
-        //         .add_buffer(data_buffer.clone())
-        //         .unwrap()
-        //         .build()
-        //         .unwrap(),
-        // );
-        //
-        // let command_buffer = AutoCommandBufferBuilder::new(
-        //     self.device.clone(),
-        //     self.queue.family(),
-        // )
-        // .unwrap()
-        // .dispatch([2, 1, 1], compute_pipeline.clone(), set.clone(), ())
-        // .unwrap()
-        // .build()
-        // .unwrap();
-        // let finished = command_buffer.execute(self.queue.clone()).unwrap();
-        // finished
-        //     .then_signal_fence_and_flush()
-        //     .unwrap()
-        //     .wait(None)
-        //     .unwrap();
+            .iter()
+            .cloned(),
+        )
+        .expect("Failed to create data_buffer");
+        let layout = compute_pipeline.layout().descriptor_set_layout(0).unwrap();
+        let set = Arc::new(
+            PersistentDescriptorSet::start(layout.clone())
+                .add_buffer(data_buffer.clone())
+                .unwrap()
+                .build()
+                .unwrap(),
+        );
+
+        let command_buffer = AutoCommandBufferBuilder::new(
+            self.device.clone(),
+            self.queue.family(),
+        )
+        .unwrap()
+        .dispatch([1024, 1, 1], compute_pipeline.clone(), set.clone(), ())
+        .unwrap()
+        .build()
+        .unwrap();
+        let finished = command_buffer.execute(self.queue.clone()).unwrap();
+        finished
+            .then_signal_fence_and_flush()
+            .unwrap()
+            .wait(None)
+            .unwrap();
         // let content = data_buffer.read().unwrap();
         // for (n, val) in content.iter().enumerate() {
         //     println!("{}{:?}", n, val);
@@ -321,7 +319,7 @@ impl Graphics {
             CpuAccessibleBuffer::from_iter(
                 self.device.clone(),
                 BufferUsage::all(),
-                cube.iter().cloned(),
+                data_buffer.read().unwrap().iter().cloned(),
             )
             .unwrap()
         };
@@ -387,9 +385,7 @@ impl Graphics {
         }
     }
 
-    pub fn window(&self) -> &Window {
-        self.surface.window()
-    }
+    pub fn window(&self) -> &Window { self.surface.window() }
 
     // pub fn recreate_swapchain(&mut self) { self.recreate_swapchain = true; }
 
@@ -446,8 +442,8 @@ fn window_size_dependent_setup(
     let dimensions = images[0].dimensions();
 
     let viewport = Viewport {
-        origin: [0.0, 0.0],
-        dimensions: [dimensions[0] as f32, dimensions[1] as f32],
+        origin:      [0.0, 0.0],
+        dimensions:  [dimensions[0] as f32, dimensions[1] as f32],
         depth_range: 0.0..1.0,
     };
     dynamic_state.viewports = Some(vec![viewport]);

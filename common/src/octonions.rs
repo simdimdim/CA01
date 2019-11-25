@@ -18,17 +18,13 @@ impl<T: Float> Octonion<T> {
         }
     }
 
-    pub fn conj_q1(&self) -> Quaternion<T> { self.q1.conj() }
-
-    pub fn conj_q2(&self) -> Quaternion<T> { self.q2.conj() }
-
     pub fn conj_mut(&mut self) -> &Self {
         self.q1.conj_mut();
         self.q2.inv_mut();
         self
     }
 
-    pub fn to_arr(&self) -> [T; 8] {
+    pub fn as_array(&self) -> [T; 8] {
         let mut v = [T::one(); 8];
         v[0..4].copy_from_slice(&self.q1.val);
         v[4..8].copy_from_slice(&self.q2.val);
@@ -81,6 +77,11 @@ impl<T: Float> From<Quaternion<T>> for Octonion<T> {
             q1: q,
             q2: Quaternion::<T>::zero(),
         }
+    }
+}
+impl<T: Float> From<(Quaternion<T>, Quaternion<T>)> for Octonion<T> {
+    fn from(q: (Quaternion<T>, Quaternion<T>)) -> Octonion<T> {
+        Self { q1: q.0, q2: q.1 }
     }
 }
 

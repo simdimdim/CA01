@@ -8,7 +8,7 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-vulkano={git="https://github.com/vulkano-rs/vulkano"}
-vulkano-shaders={git="https://github.com/vulkano-rs/vulkano"}
+vulkano={git="https://github.com/simdimdim/vulkano"}
+vulkano-shaders={git="https://github.com/simdimdim/vulkano"}
 
 num-traits="*"
