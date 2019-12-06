@@ -1,8 +1,9 @@
+pub mod assetmanager;
+
 use common::{Entity, Quaternion};
-use num_traits::{Float, One, Zero};
 use std::sync::Arc;
 use vulkano::{
-    buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
+    buffer::{BufferUsage, CpuAccessibleBuffer},
     command_buffer::{
         AutoCommandBuffer,
         AutoCommandBufferBuilder,
@@ -14,25 +15,18 @@ use vulkano::{
         pipeline_layout::PipelineLayoutAbstract,
     },
     device::{Device, DeviceExtensions, Queue},
-    format::{ClearValue, Format::D16Unorm},
+    format::Format::D16Unorm,
     framebuffer::{
         Framebuffer,
         FramebufferAbstract,
-        RenderPass,
         RenderPassAbstract,
         Subpass,
     },
     image::{attachment::AttachmentImage, SwapchainImage},
     instance::{Instance, PhysicalDevice},
-    pipeline::{
-        viewport::Viewport,
-        ComputePipeline,
-        GraphicsPipeline,
-        GraphicsPipelineAbstract,
-    },
+    pipeline::{viewport::Viewport, ComputePipeline, GraphicsPipeline},
     swapchain::{
         self,
-        acquire_next_image,
         AcquireError,
         ColorSpace,
         PresentMode,
@@ -40,10 +34,9 @@ use vulkano::{
         SurfaceTransform,
         Swapchain,
         SwapchainAcquireFuture,
-        SwapchainCreationError,
     },
     sync,
-    sync::{FlushError, GpuFuture},
+    sync::GpuFuture,
 };
 use vulkano_win::VkSurfaceBuild;
 use winit::{EventsLoop, Window, WindowBuilder};
@@ -57,9 +50,17 @@ mod vs {
 mod fs {
     vulkano_shaders::shader! {ty: "fragment", path:"shaders/frag.glsl"}
 }
+// Used to force recompilation of shader change
+#[allow(dead_code)]
+const SHADER1: &str = include_str!("../shaders/comp.glsl");
+#[allow(dead_code)]
+const SHADER2: &str = include_str!("../shaders/vert.glsl");
+#[allow(dead_code)]
+const SHADER3: &str = include_str!("../shaders/frag.glsl");
+
 #[derive(Default, Debug, Clone, Copy)]
 struct Vertex {
-    position: [f32; 3],
+    position: [f32; 4],
     orient:   [f32; 4],
 }
 pub struct Graphics {
@@ -79,6 +80,7 @@ pub struct Graphics {
      * vertex_buffer:      Vec<Arc<dyn BufferAccess + Send + Sync>>,
      * acquire_future:     SwapchainAcquireFuture<Window>,
      * command_buffer:     Arc<AutoCommandBuffer>, */
+    depth_buffer: Arc<AttachmentImage>,
 }
 
 impl Graphics {
@@ -92,9 +94,9 @@ impl Graphics {
             .with_title("CA01")
             .with_decorations(true)
             .with_transparency(true)
-            .with_fullscreen(Some(
-                events_loop.get_available_monitors().nth(0).unwrap(),
-            ))
+            // .with_fullscreen(Some(
+            //     events_loop.get_available_monitors().nth(0).unwrap(),
+            // ))
             .build_vk_surface(&events_loop, instance.clone())
             .unwrap();
         let queue_family = physical
@@ -180,18 +182,19 @@ impl Graphics {
             write_mask:   None,
             reference:    None,
         };
-        let _depth_buffer = AttachmentImage::transient(
+        let depth_buffer = AttachmentImage::transient(
             queue.device().clone(),
             dimensions,
             D16Unorm,
         )
         .unwrap();
-        let _data_buffer = data_buffer_setup(device.clone());
+        // let data_buffer = data_buffer_setup(device.clone());
         let framebuffers = window_size_dependent_setup(
             &images,
             render_pass.clone(),
             &mut dynamic_state,
             device.clone(),
+            depth_buffer.clone(),
         );
         let previous_frame_end = Some(Self::create_sync_objects(&device));
         Self {
@@ -207,6 +210,7 @@ impl Graphics {
             dynamic_state,
             previous_frame_end,
             images,
+            depth_buffer,
         }
     }
 
@@ -241,7 +245,7 @@ impl Graphics {
                 }
                 Err(err) => panic!("{:?}", err),
             };
-        let clear_values = vec![[0.0, 0.0, 0.0, 0.0].into(), 1f32.into()];
+        let clear_values = vec![[0.0, 0.0, 0.0, 1.0].into(), 1f32.into()];
         let compute_pipeline = Arc::new(
             ComputePipeline::new(
                 self.device.clone(),
@@ -251,50 +255,87 @@ impl Graphics {
             .expect("failed to create compute pipeline"),
         );
 
-        let data_buffer = CpuAccessibleBuffer::from_iter(
-            self.device.clone(),
-            BufferUsage::all(),
-            {
-                let mut x = [Vertex {
-                    position: [0.0f32; 3],
-                    orient:   [0.0f32; 4],
-                }; 6];
-                let e = Entity::<f32>::new();
-                let z = [
-                    [0.8, 0.8, 0.8],
-                    [-0.8, 0.8, 0.1],
-                    [0.5, -0.5, 0.5],
-                    [0.5, 0.5, -0.5],
-                    [-0.5, 0.5, -0.5],
-                    [-0.5, -0.5, 0.5],
-                ];
-                for i in 0..6 {
-                    x[i].position.copy_from_slice(&z[i][0..3]);
+        let data_buffer = {
+            vulkano::impl_vertex!(Vertex, position, orient);
+            CpuAccessibleBuffer::from_iter(
+                self.device.clone(),
+                BufferUsage::all(),
+                {
+                    const N: usize = 36;
+                    let mut x = [Vertex {
+                        position: [0.0f32; 4],
+                        orient:   [0.0f32; 4],
+                    }; N];
+                    // let e =  Entity::<f32>::new();
+                    let z = [
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [-1.0, -1.0, 1.0, 0.0],
+                        [-1.0, 1.0, 1.0, 0.0],
+                        [1.0, 1.0, -1.0, 0.0],
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [-1.0, 1.0, -1.0, 0.0],
+                        [1.0, -1.0, 1.0, 0.0],
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [1.0, -1.0, -1.0, 0.0],
+                        [1.0, 1.0, -1.0, 0.0],
+                        [1.0, -1.0, -1.0, 0.0],
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [-1.0, 1.0, 1.0, 0.0],
+                        [-1.0, 1.0, -1.0, 0.0],
+                        [1.0, -1.0, 1.0, 0.0],
+                        [-1.0, -1.0, 1.0, 0.0],
+                        [-1.0, -1.0, -1.0, 0.0],
+                        [-1.0, 1.0, 1.0, 0.0],
+                        [-1.0, -1.0, 1.0, 0.0],
+                        [1.0, -1.0, 1.0, 0.0],
+                        [1.0, 1.0, 1.0, 0.0],
+                        [1.0, -1.0, -1.0, 0.0],
+                        [1.0, 1.0, -1.0, 0.0],
+                        [1.0, -1.0, -1.0, 0.0],
+                        [1.0, 1.0, 1.0, 0.0],
+                        [1.0, -1.0, 1.0, 0.0],
+                        [1.0, 1.0, 1.0, 0.0],
+                        [1.0, 1.0, -1.0, 0.0],
+                        [-1.0, 1.0, -1.0, 0.0],
+                        [1.0, 1.0, 1.0, 0.0],
+                        [-1.0, 1.0, -1.0, 0.0],
+                        [-1.0, 1.0, 1.0, 0.0],
+                        [1.0, 1.0, 1.0, 0.0],
+                        [-1.0, 1.0, 1.0, 0.0],
+                        [1.0, -1.0, 1.0, 0.0],
+                    ];
+                    for i in 0..N {
+                        x[i].position = (Quaternion::new(z[i]) * 0.5).val;
+                        x[i].orient = Quaternion::new([
+                            (mouse[0] as f32 / self.dimensions[0] as f32).cos(),
+                            (mouse[0] as f32 / self.dimensions[0] as f32).sin(),
+                            (mouse[1] as f32 / self.dimensions[1] as f32).sin(),
+                            (mouse[1] as f32 / self.dimensions[1] as f32).sin(),
+                        ])
+                        .u_mut()
+                        .val;
+                    }
+                    x
                 }
-                x[2].orient[0..2].copy_from_slice(
-                    &vec![
-                        mouse[0] as f32 / self.dimensions[0] as f32 * 2.0 -
-                            1.0f32,
-                        mouse[1] as f32 / self.dimensions[1] as f32 * 2.0 -
-                            1.0f32,
-                    ][0..2],
-                );
-                x[2].orient = Quaternion::new(x[2].orient).u_mut().val;
-                x
-            }
-            .iter()
-            .cloned(),
-        )
-        .expect("Failed to create data_buffer");
-        let layout = compute_pipeline.layout().descriptor_set_layout(0).unwrap();
+                .iter()
+                .cloned(),
+            )
+            .expect("Failed to create data_buffer")
+        };
         let set = Arc::new(
-            PersistentDescriptorSet::start(layout.clone())
-                .add_buffer(data_buffer.clone())
-                .unwrap()
-                .build()
-                .unwrap(),
+            PersistentDescriptorSet::start(
+                compute_pipeline
+                    .layout()
+                    .descriptor_set_layout(0)
+                    .unwrap()
+                    .clone(),
+            )
+            .add_buffer(data_buffer.clone())
+            .unwrap()
+            .build()
+            .unwrap(),
         );
-
         let command_buffer = AutoCommandBufferBuilder::new(
             self.device.clone(),
             self.queue.family(),
@@ -304,18 +345,18 @@ impl Graphics {
         .unwrap()
         .build()
         .unwrap();
-        let finished = command_buffer.execute(self.queue.clone()).unwrap();
-        finished
+        command_buffer
+            .execute(self.queue.clone())
+            .unwrap()
             .then_signal_fence_and_flush()
             .unwrap()
             .wait(None)
             .unwrap();
-        // let content = data_buffer.read().unwrap();
-        // for (n, val) in content.iter().enumerate() {
-        //     println!("{}{:?}", n, val);
-        // }
+        let content = data_buffer.read().unwrap();
+        for (n, val) in content.iter().enumerate() {
+            println!("{} {:?}", n, val);
+        }
         let vertex_buffer = {
-            vulkano::impl_vertex!(Vertex, position, orient);
             CpuAccessibleBuffer::from_iter(
                 self.device.clone(),
                 BufferUsage::all(),
@@ -323,6 +364,7 @@ impl Graphics {
             )
             .unwrap()
         };
+
         let command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(
             self.device.clone(),
             self.queue.family(),
@@ -334,7 +376,13 @@ impl Graphics {
             clear_values,
         )
         .unwrap()
-        .draw(pipeline.clone(), &self.dynamic_state, vertex_buffer, (), ())
+        .draw(
+            pipeline.clone(),
+            &self.dynamic_state,
+            vertex_buffer.clone(),
+            (),
+            (),
+        )
         .unwrap()
         .end_render_pass()
         .unwrap()
@@ -392,14 +440,14 @@ impl Graphics {
     fn remake_swapchain(&mut self) {
         if self.recreate_swapchain {
             self.dimensions = {
-                let dd: (u32, u32) = self
+                let d: (u32, u32) = self
                     .surface
                     .window()
                     .get_inner_size()
                     .expect("Dimensions are wrong.")
                     .to_physical(self.surface.window().get_hidpi_factor())
                     .into();
-                [dd.0, dd.1]
+                [d.0, d.1]
             };
             let (new_swapchain, new_images) = self
                 .swapchain
@@ -407,11 +455,18 @@ impl Graphics {
                 .expect("Unsupported dimensions?");
             self.swapchain = new_swapchain;
             self.images = new_images;
+            self.depth_buffer = AttachmentImage::transient(
+                self.queue.device().clone(),
+                self.dimensions,
+                D16Unorm,
+            )
+            .unwrap();
             self.framebuffers = window_size_dependent_setup(
                 &self.images,
                 self.render_pass.clone(),
                 &mut self.dynamic_state,
                 self.device.clone(),
+                self.depth_buffer.clone(),
             );
         }
         self.recreate_swapchain = false;
@@ -425,11 +480,10 @@ impl Graphics {
 }
 fn data_buffer_setup(device: Arc<Device>) {
     let e = Entity::<f32>::new();
-    let q = Quaternion::<f32>::one();
     CpuAccessibleBuffer::from_iter(
         device.clone(),
         BufferUsage::all(),
-        e.model.mesh.iter().copied(),
+        e.model.positions.iter().copied(),
     )
     .expect("failed to create buffer");
 }
@@ -437,23 +491,19 @@ fn window_size_dependent_setup(
     images: &[Arc<SwapchainImage<Window>>],
     render_pass: Arc<dyn RenderPassAbstract + Send + Sync>,
     dynamic_state: &mut DynamicState,
-    device: Arc<Device>,
+    _device: Arc<Device>,
+    depth_buffer: Arc<AttachmentImage>,
 ) -> Vec<Arc<dyn FramebufferAbstract + Send + Sync>> {
     let dimensions = images[0].dimensions();
-
     let viewport = Viewport {
         origin:      [0.0, 0.0],
         dimensions:  [dimensions[0] as f32, dimensions[1] as f32],
         depth_range: 0.0..1.0,
     };
     dynamic_state.viewports = Some(vec![viewport]);
-
     images
         .iter()
         .map(|image| {
-            let depth_buffer =
-                AttachmentImage::transient(device.clone(), dimensions, D16Unorm)
-                    .unwrap();
             Arc::new(
                 Framebuffer::start(render_pass.clone())
                     .add(image.clone())

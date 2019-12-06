@@ -12,3 +12,4 @@ vulkano={git="https://github.com/simdimdim/vulkano"}
 vulkano-shaders={git="https://github.com/simdimdim/vulkano"}
 
 num-traits="*"
+tobj="*"

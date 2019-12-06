@@ -8,24 +8,24 @@ use num_traits::Float;
 use vulkano::pipeline::vertex::VertexMemberTy::{self, F32, F64};
 
 #[derive(Default, Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Quaternion<T: Float> {
+pub struct Quaternion<T: Float + From<f32>> {
     pub val: [T; 4],
 }
 #[derive(Default, Clone, Copy, Debug, Eq, PartialEq)]
-pub struct Octonion<T: Float> {
+pub struct Octonion<T: Float + From<f32>> {
     pub q1: Quaternion<T>,
     pub q2: Quaternion<T>,
 }
 #[derive(Clone, Debug, PartialEq)]
-pub struct Entity<T: Float> {
+pub struct Entity<T: Float + From<f32>> {
     pub pos:    Octonion<T>,
     pub orient: Quaternion<T>,
     pub model:  Mesh<T>,
 }
 #[derive(Clone, Debug, PartialEq)]
-pub struct Mesh<T: Float> {
-    pub rotator: Quaternion<T>,
-    pub mesh:    Vec<[f32; 3]>,
+pub struct Mesh<T: Float + From<f32>> {
+    pub positions: Vec<[T; 3]>,
+    pub normals:   Vec<[T; 3]>,
 }
 
 pub trait WhichFloat: Float {
@@ -53,7 +53,6 @@ mod tests {
         let qm = Quaternion::new([-2.0f32, 1.0, 6.0, -3.0]);
         assert_eq!(q1 * q2, qm);
         assert_eq!(q1.conj() * q2.conj(), (q2 * q1).conj());
-        // assert_eq!((q1.u() * q1.u().conj()).sqrt(), q1.u().sqrt());
     }
     #[test]
     fn octon() {

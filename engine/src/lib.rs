@@ -5,14 +5,14 @@ use graphics::Graphics;
 use num_traits::Float;
 use winit::{Event, EventsLoop, WindowEvent};
 
-pub struct Engine<T: Float> {
+pub struct Engine<T: Float + From<f32>> {
     events_loop: EventsLoop,
     graphics:    Graphics,
     mouse:       [f64; 2],
     world:       World<T>,
 }
 
-impl<T: Float> Engine<T> {
+impl<T: Float + From<f32>> Engine<T> {
     pub fn new() -> Self {
         let events_loop = EventsLoop::new();
         let graphics = Graphics::new(&events_loop);
@@ -27,9 +27,12 @@ impl<T: Float> Engine<T> {
     }
 
     pub fn run(mut self) {
+        let e = Entity::<f32>::new();
+        println!("{:?}", e);
         loop {
             let mut done = false;
             let mut recreate_swapchain = false;
+            //TODO: HiDPI scaling as push constants
             let mut mouse = [0.0f64; 2];
             self.events_loop.poll_events(|ev| match ev {
                 Event::WindowEvent {

@@ -1,10 +1,18 @@
 use crate::{Octonion, Quaternion, WhichFloat};
-use num_traits::{identities::One, Float, Zero};
-use std::ops::{Add, Div, Mul, Sub};
+use num_traits::{Float, One, Zero};
+use std::ops::{Add, Div, Mul, Neg, Sub};
 use vulkano::pipeline::vertex::{VertexMember, VertexMemberTy};
 
-impl<T: Float> Quaternion<T> {
+impl<T: Float + From<f32>> Quaternion<T> {
     pub fn new(i: [T; 4]) -> Self { Self { val: i } }
+
+    pub fn fom_imag(i: [T; 3]) -> Self {
+        Self {
+            val: [0.0.into(), i[0], i[1], i[2]],
+        }
+    }
+
+    pub fn imag(&self) -> [T; 3] { [self.val[1], self.val[2], self.val[3]] }
 
     pub fn from_slice(inp: &[T]) -> Self {
         let mut q = Quaternion::zero();
@@ -63,13 +71,6 @@ impl<T: Float> Quaternion<T> {
         v
     }
 
-    pub fn sqrt(&self) -> T {
-        self.val
-            .iter()
-            .fold(T::zero(), |sum, x| sum + *x * *x)
-            .sqrt()
-    }
-
     pub fn sum(&self) -> T {
         self.val[0] + self.val[1] + self.val[2] + self.val[3]
     }
@@ -86,18 +87,18 @@ impl<T: Float> Quaternion<T> {
     }
 }
 
-impl<T: Float> From<[T; 3]> for Quaternion<T> {
+impl<T: Float + From<f32>> From<[T; 3]> for Quaternion<T> {
     fn from(inp: [T; 3]) -> Quaternion<T> { Quaternion::from_slice(&inp) }
 }
 
-unsafe impl<T: Float + WhichFloat> VertexMember for Quaternion<T> {
+unsafe impl<T: From<f32> + WhichFloat> VertexMember for Quaternion<T> {
     fn format() -> (VertexMemberTy, usize) { (T::vmt(), T::vms()) }
 }
 
-impl<T: Float> One for Quaternion<T> {
+impl<T: Float + From<f32>> One for Quaternion<T> {
     fn one() -> Self { Self { val: [T::one(); 4] } }
 }
-impl<T: Float> Zero for Quaternion<T> {
+impl<T: Float + From<f32>> Zero for Quaternion<T> {
     fn zero() -> Self {
         Self {
             val: [T::zero(); 4],
@@ -112,7 +113,7 @@ impl<T: Float> Zero for Quaternion<T> {
     }
 }
 
-impl<T: Float> Mul<T> for Quaternion<T> {
+impl<T: Float + From<f32>> Mul<T> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn mul(
@@ -129,7 +130,7 @@ impl<T: Float> Mul<T> for Quaternion<T> {
         }
     }
 }
-impl<T: Float> Mul<Quaternion<T>> for Quaternion<T> {
+impl<T: Float + From<f32>> Mul<Quaternion<T>> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn mul(
@@ -156,7 +157,7 @@ impl<T: Float> Mul<Quaternion<T>> for Quaternion<T> {
         }
     }
 }
-impl<T: Float> Mul<Octonion<T>> for Quaternion<T> {
+impl<T: Float + From<f32>> Mul<Octonion<T>> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn mul(
@@ -167,7 +168,7 @@ impl<T: Float> Mul<Octonion<T>> for Quaternion<T> {
     }
 }
 
-impl<T: Float> Add<T> for Quaternion<T> {
+impl<T: Float + From<f32>> Add<T> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn add(
@@ -184,7 +185,7 @@ impl<T: Float> Add<T> for Quaternion<T> {
         }
     }
 }
-impl<T: Float> Add<Quaternion<T>> for Quaternion<T> {
+impl<T: Float + From<f32>> Add<Quaternion<T>> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn add(
@@ -202,7 +203,7 @@ impl<T: Float> Add<Quaternion<T>> for Quaternion<T> {
     }
 }
 
-impl<T: Float> Sub<T> for Quaternion<T> {
+impl<T: Float + From<f32>> Sub<T> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn sub(
@@ -219,7 +220,7 @@ impl<T: Float> Sub<T> for Quaternion<T> {
         }
     }
 }
-impl<T: Float> Sub<Quaternion<T>> for Quaternion<T> {
+impl<T: Float + From<f32>> Sub<Quaternion<T>> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn sub(
@@ -237,7 +238,7 @@ impl<T: Float> Sub<Quaternion<T>> for Quaternion<T> {
     }
 }
 
-impl<T: Float> Div<T> for Quaternion<T> {
+impl<T: Float + From<f32>> Div<T> for Quaternion<T> {
     type Output = Quaternion<T>;
 
     fn div(
@@ -251,6 +252,15 @@ impl<T: Float> Div<T> for Quaternion<T> {
                 self.val[2] / rhs,
                 self.val[3] / rhs,
             ],
+        }
+    }
+}
+impl<T: Float + From<f32>> Neg for Quaternion<T> {
+    type Output = Quaternion<T>;
+
+    fn neg(self) -> Quaternion<T> {
+        Quaternion {
+            val: [-self.val[0], -self.val[1], -self.val[2], -self.val[3]],
         }
     }
 }

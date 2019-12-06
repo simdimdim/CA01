@@ -15,3 +15,4 @@ vulkano-shaders={git="https://github.com/simdimdim/vulkano"}
 vk-sys ={git = "https://github.com/simdimdim/vulkano", branch = "master" }
 common={path="../common"}
 num-traits="*"
+tobj="*"

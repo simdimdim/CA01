@@ -3,7 +3,7 @@ use num_traits::{identities::One, Float, Zero};
 use std::ops::{Add, Mul, Sub};
 use vulkano::pipeline::vertex::{VertexMember, VertexMemberTy};
 
-impl<T: Float> Octonion<T> {
+impl<T: Float + From<f32>> Octonion<T> {
     pub fn new(vec8: [T; 8]) -> Self {
         Self {
             q1: Quaternion::from_slice(&vec8[0..4]),
@@ -36,7 +36,7 @@ impl<T: Float> Octonion<T> {
         other: Octonion<T>,
         t: T,
     ) -> Octonion<T> {
-        self * (Octonion::<T>::one() - t) + other * t
+        self * (Octonion::one() - t) + other * t
     }
 
     // pub fn lerp_q(
@@ -48,11 +48,11 @@ impl<T: Float> Octonion<T> {
     // }
 }
 
-unsafe impl<T: Float + WhichFloat> VertexMember for Octonion<T> {
+unsafe impl<T: Float + From<f32> + WhichFloat> VertexMember for Octonion<T> {
     fn format() -> (VertexMemberTy, usize) { (T::vmt(), T::vms()) }
 }
 
-impl<T: Float> One for Octonion<T> {
+impl<T: Float + From<f32>> One for Octonion<T> {
     fn one() -> Self {
         Self {
             q1: Quaternion::one(),
@@ -60,7 +60,7 @@ impl<T: Float> One for Octonion<T> {
         }
     }
 }
-impl<T: Float> Zero for Octonion<T> {
+impl<T: Float + From<f32>> Zero for Octonion<T> {
     fn zero() -> Self {
         Self {
             q1: Quaternion::zero(),
@@ -71,21 +71,21 @@ impl<T: Float> Zero for Octonion<T> {
     fn is_zero(&self) -> bool { self.q1.is_zero() && self.q2.is_zero() }
 }
 
-impl<T: Float> From<Quaternion<T>> for Octonion<T> {
+impl<T: Float + From<f32>> From<Quaternion<T>> for Octonion<T> {
     fn from(q: Quaternion<T>) -> Octonion<T> {
         Self {
             q1: q,
-            q2: Quaternion::<T>::zero(),
+            q2: Quaternion::zero(),
         }
     }
 }
-impl<T: Float> From<(Quaternion<T>, Quaternion<T>)> for Octonion<T> {
+impl<T: Float + From<f32>> From<(Quaternion<T>, Quaternion<T>)> for Octonion<T> {
     fn from(q: (Quaternion<T>, Quaternion<T>)) -> Octonion<T> {
         Self { q1: q.0, q2: q.1 }
     }
 }
 
-impl<T: Float> Mul<T> for Octonion<T> {
+impl<T: Float + From<f32>> Mul<T> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn mul(
@@ -98,7 +98,7 @@ impl<T: Float> Mul<T> for Octonion<T> {
         }
     }
 }
-impl<T: Float> Mul<Octonion<T>> for Octonion<T> {
+impl<T: Float + From<f32>> Mul<Octonion<T>> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn mul(
@@ -111,7 +111,7 @@ impl<T: Float> Mul<Octonion<T>> for Octonion<T> {
         }
     }
 }
-impl<T: Float> Mul<Quaternion<T>> for Octonion<T> {
+impl<T: Float + From<f32>> Mul<Quaternion<T>> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn mul(
@@ -122,7 +122,7 @@ impl<T: Float> Mul<Quaternion<T>> for Octonion<T> {
     }
 }
 
-impl<T: Float> Add<T> for Octonion<T> {
+impl<T: Float + From<f32>> Add<T> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn add(
@@ -135,7 +135,7 @@ impl<T: Float> Add<T> for Octonion<T> {
         }
     }
 }
-impl<T: Float> Add<Octonion<T>> for Octonion<T> {
+impl<T: Float + From<f32>> Add<Octonion<T>> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn add(
@@ -149,7 +149,7 @@ impl<T: Float> Add<Octonion<T>> for Octonion<T> {
     }
 }
 
-impl<T: Float> Sub<T> for Octonion<T> {
+impl<T: Float + From<f32>> Sub<T> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn sub(
@@ -162,7 +162,7 @@ impl<T: Float> Sub<T> for Octonion<T> {
         }
     }
 }
-impl<T: Float> Sub<Octonion<T>> for Octonion<T> {
+impl<T: Float + From<f32>> Sub<Octonion<T>> for Octonion<T> {
     type Output = Octonion<T>;
 
     fn sub(
