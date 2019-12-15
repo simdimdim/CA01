@@ -7,11 +7,11 @@ pub mod quaternions;
 use num_traits::Float;
 use vulkano::pipeline::vertex::VertexMemberTy::{self, F32, F64};
 
-#[derive(Default, Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Default, Debug, Eq, PartialEq)]
 pub struct Quaternion<T: Float + From<f32>> {
     pub val: [T; 4],
 }
-#[derive(Default, Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Octonion<T: Float + From<f32>> {
     pub q1: Quaternion<T>,
     pub q2: Quaternion<T>,
@@ -22,10 +22,12 @@ pub struct Entity<T: Float + From<f32>> {
     pub orient: Quaternion<T>,
     pub model:  Mesh<T>,
 }
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Default, Debug, PartialEq)]
 pub struct Mesh<T: Float + From<f32>> {
     pub positions: Vec<[T; 3]>,
     pub normals:   Vec<[T; 3]>,
+    pub scale:     f32,
+    pub offset:    [T; 3],
 }
 
 pub trait WhichFloat: Float {

@@ -1,7 +1,6 @@
 pub mod world;
-use crate::world::World;
-use common::Entity;
-use graphics::Graphics;
+use common::{Entity, Quaternion};
+use graphics::{AssetManager, Graphics};
 use num_traits::Float;
 use winit::{Event, EventsLoop, WindowEvent};
 
@@ -12,7 +11,13 @@ pub struct Engine<T: Float + From<f32>> {
     world:       World<T>,
 }
 
-impl<T: Float + From<f32>> Engine<T> {
+#[derive(Clone, Debug)]
+pub struct World<T: Float + From<f32>> {
+    origin:  Quaternion<T>,
+    objects: Vec<Entity<T>>,
+}
+
+impl<T: std::fmt::Debug + Float + From<f32>> Engine<T> {
     pub fn new() -> Self {
         let events_loop = EventsLoop::new();
         let graphics = Graphics::new(&events_loop);
@@ -27,8 +32,6 @@ impl<T: Float + From<f32>> Engine<T> {
     }
 
     pub fn run(mut self) {
-        let e = Entity::<f32>::new();
-        println!("{:?}", e);
         loop {
             let mut done = false;
             let mut recreate_swapchain = false;
@@ -61,7 +64,7 @@ impl<T: Float + From<f32>> Engine<T> {
 
     pub fn create_world() -> World<T> {
         let world = World::<T>::new();
-        world.add_object(Entity::<T>::new());
+        world.add_object(AssetManager::new().load::<T>("cube"));
         world
     }
 }

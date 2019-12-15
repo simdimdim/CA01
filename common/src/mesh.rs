@@ -1,16 +1,13 @@
 use crate::{Mesh, Quaternion};
 use num_traits::{Float, Zero};
 use tobj;
-
 impl<T: Float + From<f32>> Mesh<T> {
     pub fn new() -> Self {
         Self {
-            positions: vec![
-                [0.3.into(), 0.3.into(), 0.3.into()],
-                [0.3.into(), 0.3.into(), 0.3.into()],
-                [0.3.into(), 0.3.into(), 0.3.into()],
-            ],
+            positions: vec![],
             normals:   vec![],
+            scale:     0.0,
+            offset:    [T::zero(); 3],
         }
     }
 
@@ -30,7 +27,12 @@ impl<T: Float + From<f32>> Mesh<T> {
             .map(|i| [i[0].into(), i[1].into(), i[2].into()])
             .collect();
 
-        Mesh { positions, normals }
+        Mesh {
+            positions,
+            normals,
+            scale,
+            offset: translation,
+        }
     }
 
     pub fn add_points(

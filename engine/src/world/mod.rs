@@ -1,10 +1,6 @@
+use crate::World;
 use common::{Entity, Quaternion};
 use num_traits::{Float, Zero};
-
-pub struct World<T: Float + From<f32>> {
-    origin:  Quaternion<T>,
-    objects: Vec<Entity<T>>,
-}
 
 impl<T: Float + From<f32>> World<T> {
     pub fn new() -> Self {
