@@ -1,4 +1,5 @@
 use crate::{AssetManager, Graphics};
+use vulkano::buffer::BufferAccess;
 
 use common::{Entity, Quaternion};
 use std::sync::Arc;
@@ -25,7 +26,12 @@ use vulkano::{
     },
     image::{attachment::AttachmentImage, SwapchainImage},
     instance::{Instance, PhysicalDevice},
-    pipeline::{viewport::Viewport, ComputePipeline, GraphicsPipeline},
+    pipeline::{
+        vertex::TwoBuffersDefinition,
+        viewport::Viewport,
+        ComputePipeline,
+        GraphicsPipeline,
+    },
     swapchain::{
         self,
         AcquireError,
@@ -63,8 +69,13 @@ const SHADER3: &str = include_str!("../shaders/frag.glsl");
 struct Vertex {
     position: [f32; 4],
     orient:   [f32; 4],
+    normals:  [f32; 4],
 }
-
+#[derive(Default, Debug, Clone)]
+struct Normal {
+    normal: [f32; 4],
+}
+vulkano::impl_vertex!(Normal, normal);
 impl Graphics {
     pub fn new(events_loop: &EventsLoop) -> Self {
         let instance = {
@@ -209,7 +220,8 @@ impl Graphics {
         let fs = fs::Shader::load(self.device.clone()).unwrap();
         let pipeline = Arc::new(
             GraphicsPipeline::start()
-                .vertex_input_single_buffer()
+                // .vertex_input_single_buffer::<Vertex>()
+                .vertex_input(TwoBuffersDefinition::<Vertex,Normal>::new())
                 .vertex_shader(vs.main_entry_point(), ())
                 .triangle_list()
                 .viewports_dynamic_scissors_irrelevant(1)
@@ -239,33 +251,37 @@ impl Graphics {
         );
 
         let data_buffer = {
-            vulkano::impl_vertex!(Vertex, position, orient);
+            vulkano::impl_vertex!(Vertex, position, orient, normals);
             CpuAccessibleBuffer::from_iter(
                 self.device.clone(),
                 BufferUsage::all(),
                 {
-                    let e = AssetManager::new().load::<f32>("cube");
-                    const N: usize = 24;
-                    let mut x = [Vertex {
-                        position: [0.0f32; 4],
-                        orient:   [0.0f32; 4],
-                    }; N];
-                    for i in 0..N {
-                        x[i].position = (Quaternion::new([
-                            e.model.positions[i][0],
-                            e.model.positions[i][1],
-                            e.model.positions[i][2],
-                            0.0,
-                        ]) * 0.5)
-                            .val;
-                        x[i].orient = Quaternion::new([
-                            (mouse[0] as f32 / self.dimensions[0] as f32).cos(),
-                            (mouse[0] as f32 / self.dimensions[0] as f32).sin(),
-                            (mouse[1] as f32 / self.dimensions[1] as f32).sin(),
-                            (mouse[1] as f32 / self.dimensions[1] as f32).sin(),
-                        ])
-                        .u_mut()
-                        .val;
+                    let mut e = AssetManager::new().load::<f32>("teapot");
+                    e.model.scale = 0.25;
+                    let mut x = vec![];
+                    for i in 0..e.len {
+                        x.push(Vertex {
+                            position: (Quaternion::new([
+                                e.model.positions[i][0],
+                                e.model.positions[i][1],
+                                e.model.positions[i][2],
+                                0.0,
+                            ]) * e.model.scale)
+                                .val,
+                            orient:   Quaternion::new([
+                                (mouse[1] as f32 / self.dimensions[1] as f32)
+                                    .cos(),
+                                -(mouse[0] as f32 / self.dimensions[0] as f32)
+                                    .sin(),
+                                -(mouse[0] as f32 / self.dimensions[0] as f32)
+                                    .sin(),
+                                (mouse[1] as f32 / self.dimensions[1] as f32)
+                                    .sin(),
+                            ])
+                            .u_mut()
+                            .val,
+                            normals:  [0.0f32; 4],
+                        });
                     }
                     x
                 }
@@ -274,6 +290,18 @@ impl Graphics {
             )
             .expect("Failed to create data_buffer")
         };
+        let uniform_buffer = CpuAccessibleBuffer::from_iter(
+            self.device.clone(),
+            BufferUsage::all(),
+            vec![
+                self.dimensions[0] as f32 / 2560.0,
+                self.dimensions[1] as f32 / 1440.0,
+            ]
+            .iter()
+            .cloned(),
+        )
+        .expect("Failed to create data_buffer");
+
         let set = Arc::new(
             PersistentDescriptorSet::start(
                 compute_pipeline
@@ -283,6 +311,8 @@ impl Graphics {
                     .clone(),
             )
             .add_buffer(data_buffer.clone())
+            .unwrap()
+            .add_buffer(uniform_buffer.clone())
             .unwrap()
             .build()
             .unwrap(),
@@ -303,11 +333,11 @@ impl Graphics {
             .unwrap()
             .wait(None)
             .unwrap();
-        let content = data_buffer.read().unwrap();
-        for (n, val) in content.iter().enumerate() {
-            println!("{} {:?}", n, val);
-        }
-        let vertex_buffer = {
+        // let content = data_buffer.read().unwrap();
+        // for (n, val) in content.iter().enumerate() {
+        //     println!("{} {:?}", n, val);
+        // }
+        let vertex_buffer: Arc<dyn BufferAccess + Send + Sync> = {
             CpuAccessibleBuffer::from_iter(
                 self.device.clone(),
                 BufferUsage::all(),
@@ -315,7 +345,47 @@ impl Graphics {
             )
             .unwrap()
         };
-
+        let (index_buffer, normals_buffer) = {
+            let mut e = AssetManager::new().load::<f32>("teapot");
+            e.model.scale = 0.5;
+            (
+                CpuAccessibleBuffer::from_iter(
+                    self.device.clone(),
+                    BufferUsage::index_buffer(),
+                    e.model.indices.iter().cloned(),
+                )
+                .expect("Failed to create index_buffer"),
+                CpuAccessibleBuffer::from_iter(
+                    self.device.clone(),
+                    BufferUsage::vertex_buffer(),
+                    {
+                        let mut x = vec![];
+                        for i in 0..e.len {
+                            x.push(Vertex {
+                                position: (Quaternion::new([
+                                    e.model.positions[i][0],
+                                    e.model.positions[i][1],
+                                    e.model.positions[i][2],
+                                    0.0,
+                                ]) * e.model.scale)
+                                    .val,
+                                orient:   [0.0; 4],
+                                normals:  [
+                                    e.model.normals[i][0],
+                                    e.model.normals[i][1],
+                                    e.model.normals[i][2],
+                                    0.0,
+                                ],
+                            });
+                        }
+                        x
+                    }
+                    .iter()
+                    .cloned(),
+                )
+                .expect("Failed to create normals_buffer"),
+            )
+        };
         let command_buffer = AutoCommandBufferBuilder::primary_one_time_submit(
             self.device.clone(),
             self.queue.family(),
@@ -327,23 +397,15 @@ impl Graphics {
             clear_values,
         )
         .unwrap()
-        .draw(
+        .draw_indexed(
             pipeline.clone(),
             &self.dynamic_state,
-            vertex_buffer.clone(),
+            vec![vertex_buffer.clone(), normals_buffer.clone()],
+            index_buffer.clone(),
             (),
             (),
         )
         .unwrap()
-        // .draw_indexed(
-        //     pipeline.clone(),
-        //     &self.dynamic_state,
-        //     vec![vertex_buffer.clone(), normals_buffer.clone()],
-        //     index_buffer.clone(),
-        //     (),
-        //     (),
-        // )
-        // .unwrap()
         .end_render_pass()
         .unwrap()
         .build()

@@ -21,11 +21,13 @@ pub struct Entity<T: Float + From<f32>> {
     pub pos:    Octonion<T>,
     pub orient: Quaternion<T>,
     pub model:  Mesh<T>,
+    pub len:    usize,
 }
 #[derive(Clone, Default, Debug, PartialEq)]
 pub struct Mesh<T: Float + From<f32>> {
     pub positions: Vec<[T; 3]>,
     pub normals:   Vec<[T; 3]>,
+    pub indices:   Vec<u32>,
     pub scale:     f32,
     pub offset:    [T; 3],
 }

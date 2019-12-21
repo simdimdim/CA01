@@ -10,20 +10,24 @@ vec4 quat_mul(vec4 q1, vec4 q2){
   qr.w = (q1.x * q2.w) + (q1.y * q2.z) - (q1.z * q2.y) + (q1.w * q2.x);
   return qr;
 }
-vec4 rotate(vec4 pos, vec4 rotator){
+vec4 rotate(vec4 pos, vec4 rotator, vec2 ar){
   vec3 a=quat_mul(quat_mul(rotator,vec4(0.0,pos.xyz)),quat_conj(rotator)).yzw;
-  return vec4(a.xy,(a.z+1.0)/2.0,1.0);
+  return vec4(a.xy/ar,a.z,1.0);
 }
 struct vert {
     vec4 position;
     vec4 orient;
+    vec4 normals;
 };
-layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = 8, local_size_y = 1, local_size_z = 1) in;
 layout(set = 0, binding = 0) buffer Data {
 	vert data[];
 } buf;
-
+layout(set = 0, binding = 1) buffer Uni {
+	vec2 data[];
+} ar;
 void main() {
   uint idx = gl_GlobalInvocationID.x;
- 	buf.data[idx].position = rotate(buf.data[idx].position,buf.data[idx].orient);
+ 	buf.data[idx].position = rotate(buf.data[idx].position,buf.data[idx].orient,ar.data[0]);
+
 }

@@ -1,18 +1,29 @@
 use crate::AssetManager;
 use common::{Entity, Mesh, Octonion, Quaternion};
 use num_traits::{Float, Zero};
-use std::path::PathBuf;
-use tobj::{self};
+use std::{fs, io, path::PathBuf};
+use tobj::{
+    Model,
+    {self},
+};
 
 impl AssetManager {
     pub fn new() -> Self {
-        let assets_path = PathBuf::from("./graphics/assets/cube.obj");
-        // if assets_path.exists() {
-        //     print!("{:?}", std::fs::canonicalize(&assets_path));
-        // }
-        //discard materials with .0
-        let objects = tobj::load_obj(&assets_path).unwrap().0;
-        let names = vec!["cube".to_string()];
+        let assets_path = PathBuf::from("./graphics/assets");
+        let assets_paths = fs::read_dir(&assets_path)
+            .expect("Could not read assets.")
+            .map(|res| res.map(|e| e.path()))
+            .collect::<Result<Vec<_>, io::Error>>()
+            .expect("Could not load assets.");
+        let mut objects: Vec<Model> = vec![];
+        let mut names: Vec<String> = vec![];
+        for p in assets_paths {
+            //discard materials with .0
+            for o in tobj::load_obj(&p).unwrap().0 {
+                objects.push(o);
+            }
+            names.push(p.file_stem().unwrap().to_str().unwrap().to_string());
+        }
         Self {
             assets_path,
             objects,
@@ -24,15 +35,17 @@ impl AssetManager {
         &self,
         n: &str,
     ) -> Entity<T> {
+        let m = Mesh::<T>::from_tobj_to_mesh(
+            &self.objects[self.objects.iter().position(|r| r.name == n).unwrap()]
+                .mesh,
+            [T::zero(); 3],
+            0.5,
+        );
         Entity {
             pos:    Octonion::zero(),
             orient: Quaternion::zero(),
-            model:  Mesh::<T>::from_tobj_to_mesh(
-                &self.objects[self.names.iter().position(|r| r == n).unwrap()]
-                    .mesh,
-                [T::zero(); 3],
-                0.5,
-            ),
+            len:    m.positions.len(),
+            model:  m,
         }
     }
 }

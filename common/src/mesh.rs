@@ -6,6 +6,7 @@ impl<T: Float + From<f32>> Mesh<T> {
         Self {
             positions: vec![],
             normals:   vec![],
+            indices:   vec![],
             scale:     0.0,
             offset:    [T::zero(); 3],
         }
@@ -26,10 +27,12 @@ impl<T: Float + From<f32>> Mesh<T> {
             .chunks(3)
             .map(|i| [i[0].into(), i[1].into(), i[2].into()])
             .collect();
+        let indices = mesh.indices.to_vec();
 
         Mesh {
             positions,
             normals,
+            indices,
             scale,
             offset: translation,
         }
