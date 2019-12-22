@@ -1,5 +1,6 @@
 #![deny(bare_trait_objects)]
 pub mod entity;
+pub mod managers;
 pub mod mesh;
 pub mod octonions;
 pub mod quaternions;

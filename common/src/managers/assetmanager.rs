@@ -1,5 +1,4 @@
-use crate::AssetManager;
-use common::{Entity, Mesh, Octonion, Quaternion};
+use crate::{managers::AssetManager, Entity, Mesh, Octonion, Quaternion};
 use num_traits::{Float, Zero};
 use std::{fs, io, path::PathBuf};
 use tobj::{

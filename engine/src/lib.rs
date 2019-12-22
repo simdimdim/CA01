@@ -1,6 +1,6 @@
 pub mod world;
-use common::{Entity, Quaternion};
-use graphics::{AssetManager, Graphics};
+use common::{managers::AssetManager, Entity, Quaternion};
+use graphics::Graphics;
 use num_traits::Float;
 use winit::{Event, EventsLoop, WindowEvent};
 

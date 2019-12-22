@@ -1,5 +1,5 @@
-pub mod assetmanager;
 pub mod graphics;
+pub mod renderer;
 
 use std::{path::PathBuf, sync::Arc};
 use tobj::Model;
@@ -14,12 +14,8 @@ use vulkano::{
 };
 use winit::Window;
 
-#[derive(Default)]
-pub struct AssetManager {
-    assets_path: PathBuf,
-    names:       Vec<String>,
-    objects:     Vec<Model>,
-}
+pub struct Renderer {}
+
 pub struct Graphics {
     instance:           Arc<Instance>,
     surface:            Arc<Surface<Window>>,

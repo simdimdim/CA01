@@ -2,6 +2,7 @@
 vec4 quat_conj(vec4 q){
   return vec4(q.x, -q.y, -q.z, -q.w);
 }
+// TODO: Take a look at this: https://gamedev.stackexchange.com/a/50545
 vec4 quat_mul(vec4 q1, vec4 q2){
   vec4 qr;
   qr.x = (q1.x * q2.x) - (q1.y * q2.y) - (q1.z * q2.z) - (q1.w * q2.w);
