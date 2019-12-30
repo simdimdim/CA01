@@ -2,6 +2,7 @@ use crate::{
     shaders::{cs, fs, vs},
     Normal,
     Renderer,
+    Ubo,
     Vertex,
 };
 use common::{managers::AssetManager, Quaternion};
@@ -11,7 +12,7 @@ use vulkano::{
     command_buffer::{AutoCommandBufferBuilder, CommandBuffer, DynamicState},
     descriptor::{
         descriptor_set::PersistentDescriptorSet,
-        pipeline_layout::{PipelineLayoutAbstract, PipelineLayoutDesc},
+        pipeline_layout::PipelineLayoutAbstract,
     },
     device::{Device, Queue},
     framebuffer::{FramebufferAbstract, RenderPassAbstract, Subpass},
@@ -94,10 +95,25 @@ impl Renderer {
         let uniform_buffer = CpuAccessibleBuffer::from_iter(
             device.clone(),
             BufferUsage::all(),
-            vec![
-                images[0].dimensions()[0] as f32 / 2560.0,
-                images[0].dimensions()[1] as f32 / 1440.0,
-            ]
+            vec![Ubo {
+                ar:    [
+                    images[0].dimensions()[0] as f32 / 2560.0,
+                    images[0].dimensions()[1] as f32 / 1440.0,
+                ],
+                mouse: [
+                    mouse[0] as f32 / dimensions[0] as f32 * 2.0 - 1.0,
+                    -(mouse[1] as f32 / dimensions[1] as f32 * 2.0 - 1.0),
+                ],
+                proj:  [[0.0f32; 4]; 4],
+                rot:   Quaternion::new([
+                    (mouse[1] as f32 / dimensions[1] as f32).cos(),
+                    -(mouse[0] as f32 / dimensions[0] as f32).sin(),
+                    -(mouse[0] as f32 / dimensions[0] as f32).sin(),
+                    (mouse[1] as f32 / dimensions[1] as f32).sin(),
+                ])
+                .u_mut()
+                .val,
+            }]
             .iter()
             .cloned(),
         )
@@ -118,14 +134,9 @@ impl Renderer {
                             0.0,
                         ]) * e.model.scale)
                             .val,
-                        orient:   Quaternion::new([
-                            (mouse[1] as f32 / dimensions[1] as f32).cos(),
-                            -(mouse[0] as f32 / dimensions[0] as f32).sin(),
-                            -(mouse[0] as f32 / dimensions[0] as f32).sin(),
-                            (mouse[1] as f32 / dimensions[1] as f32).sin(),
-                        ])
-                        .u_mut()
-                        .val,
+                        orient:   Quaternion::new([1.0, 0.0, 0.0, 0.0])
+                            .u_mut()
+                            .val,
                         normals:  [0.0f32; 4],
                     });
                 }
@@ -167,7 +178,7 @@ impl Renderer {
             .unwrap();
         self.data_buffer = CpuAccessibleBuffer::from_iter(
             device.clone(),
-            BufferUsage::all(),
+            BufferUsage::vertex_buffer(),
             data_buffer.read().unwrap().iter().cloned(),
         )
         .unwrap();

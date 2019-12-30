@@ -65,7 +65,6 @@ impl<T: std::fmt::Debug + Float + From<f32>> Engine<T> {
                 _ => (),
             });
             self.mouse = mouse;
-            println!("{:?}", self.mouse);
             self.graphics
                 .render(recreate_swapchain, &self.assets, self.mouse);
             if done {

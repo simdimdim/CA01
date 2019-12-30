@@ -26,8 +26,16 @@ struct Vertex {
 struct Normal {
     normal: [f32; 4],
 }
+#[derive(Default, Debug, Clone)]
+struct Ubo {
+    ar:    [f32; 2],
+    mouse: [f32; 2],
+    proj:  [[f32; 4]; 4],
+    rot:   [f32; 4],
+}
 vulkano::impl_vertex!(Vertex, position, orient, normals);
 vulkano::impl_vertex!(Normal, normal);
+vulkano::impl_vertex!(Ubo, ar, mouse, proj, rot);
 
 pub struct Renderer {
     pipeline:           Arc<dyn GraphicsPipelineAbstract + Sync + Send>,
