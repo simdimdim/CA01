@@ -1,5 +1,5 @@
 use crate::{Mesh, Quaternion};
-use num_traits::{Float, Zero};
+use num_traits::Float;
 use tobj;
 impl<T: Float + From<f32>> Mesh<T> {
     pub fn new() -> Self {
