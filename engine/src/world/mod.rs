@@ -2,6 +2,10 @@ use crate::World;
 use common::{Entity, Quaternion};
 use num_traits::{Float, Zero};
 
+impl<T: Float + From<f32>> Default for World<T> {
+    fn default() -> Self { Self::new() }
+}
+
 impl<T: Float + From<f32>> World<T> {
     pub fn new() -> Self {
         let objects = vec![];

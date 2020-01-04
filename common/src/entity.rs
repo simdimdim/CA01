@@ -33,4 +33,12 @@ impl<T: Float + From<f32>> Entity<T> {
         self.model = m;
         self
     }
+
+    pub fn set_scale(
+        mut self,
+        new_scale: f32,
+    ) -> Self {
+        self.model.scale = new_scale;
+        self
+    }
 }

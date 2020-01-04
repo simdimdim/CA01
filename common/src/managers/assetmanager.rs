@@ -1,5 +1,4 @@
-use crate::AssetManager;
-use common::{Entity, Mesh, Octonion, Quaternion};
+use crate::{managers::AssetManager, Entity, Mesh, Octonion, Quaternion};
 use num_traits::{Float, Zero};
 use std::{fs, io, path::PathBuf};
 use tobj::{
@@ -16,18 +15,18 @@ impl AssetManager {
             .collect::<Result<Vec<_>, io::Error>>()
             .expect("Could not load assets.");
         let mut objects: Vec<Model> = vec![];
-        let mut names: Vec<String> = vec![];
+        // let mut names: Vec<String> = vec![];
         for p in assets_paths {
             //discard materials with .0
             for o in tobj::load_obj(&p).unwrap().0 {
                 objects.push(o);
             }
-            names.push(p.file_stem().unwrap().to_str().unwrap().to_string());
+            // names.push(p.file_stem().unwrap().to_str().unwrap().to_string());
         }
         Self {
-            assets_path,
+            // assets_path,
             objects,
-            names,
+            // names,
         }
     }
 
