@@ -9,10 +9,10 @@ publish = false
 
 [dependencies]
 winit="0.19"
-vulkano={git="https://github.com/simdimdim/vulkano"}
-vulkano-win={git="https://github.com/simdimdim/vulkano"}
-vulkano-shaders={git="https://github.com/simdimdim/vulkano"}
-vk-sys ={git = "https://github.com/simdimdim/vulkano", branch = "master" }
+vulkano={ git="https://github.com/simdimdim/vulkano", branch = "master"}
+vulkano-win={ git="https://github.com/simdimdim/vulkano", branch = "master"}
+vulkano-shaders={ git="https://github.com/simdimdim/vulkano", branch = "master"}
+vk-sys={ git="https://github.com/simdimdim/vulkano", branch = "master" }
 common={path="../common"}
 num-traits="*"
 tobj="*"
