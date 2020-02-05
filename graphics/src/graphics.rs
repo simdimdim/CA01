@@ -13,13 +13,22 @@ use vulkano::{
     image::{attachment::AttachmentImage, SwapchainImage},
     instance::{Instance, PhysicalDevice},
     pipeline::viewport::Viewport,
-    swapchain::{ColorSpace, PresentMode, SurfaceTransform, Swapchain},
+    swapchain::{
+        ColorSpace,
+        FullscreenExclusive,
+        PresentMode,
+        SurfaceTransform,
+        Swapchain,
+    },
 };
 use vulkano_win::VkSurfaceBuild;
-use winit::{EventsLoop, Window, WindowBuilder};
+use winit::{
+    event_loop::EventLoop,
+    window::{Window, WindowBuilder},
+};
 
 impl Graphics {
-    pub fn new(events_loop: &EventsLoop) -> Self {
+    pub fn new(eventl: &EventLoop<()>) -> Self {
         let instance = {
             let extensions = vulkano_win::required_extensions();
             Instance::new(None, &extensions, None).unwrap()
@@ -28,11 +37,11 @@ impl Graphics {
         let surface = WindowBuilder::new()
             .with_title("CA01")
             .with_decorations(true)
-            .with_transparency(true)
+            .with_transparent(true)
             // .with_fullscreen(Some(
             //     events_loop.get_available_monitors().nth(0).unwrap(),
             // ))
-            .build_vk_surface(&events_loop, instance.clone())
+            .build_vk_surface(&eventl, instance.clone())
             .unwrap();
         let queue_family = physical
             .queue_families()
@@ -53,13 +62,8 @@ impl Graphics {
         .unwrap();
         let queue = queues.next().unwrap();
         let dimensions = {
-            let logical_dimensions = surface
-                .window()
-                .get_inner_size()
-                .expect("Could not get window dimensions.");
-            let dimensions: (u32, u32) = logical_dimensions
-                .to_physical(surface.window().get_hidpi_factor())
-                .into();
+            let logical_dimensions = surface.window().inner_size();
+            let dimensions: (u32, u32) = logical_dimensions.into();
             [dimensions.0, dimensions.1]
         };
         let recreate_swapchain = false;
@@ -81,6 +85,7 @@ impl Graphics {
                 SurfaceTransform::Identity,
                 alpha,
                 PresentMode::Fifo,
+                FullscreenExclusive::Default,
                 true,
                 ColorSpace::SrgbNonLinear,
             )
@@ -188,18 +193,12 @@ impl Graphics {
     fn remake_swapchain(&mut self) {
         if self.recreate_swapchain {
             self.dimensions = {
-                let d: (u32, u32) = self
-                    .surface
-                    .window()
-                    .get_inner_size()
-                    .expect("Dimensions are wrong.")
-                    .to_physical(self.surface.window().get_hidpi_factor())
-                    .into();
+                let d: (u32, u32) = self.surface.window().inner_size().into();
                 [d.0, d.1]
             };
             let (new_swapchain, new_images) = self
                 .swapchain
-                .recreate_with_dimension(self.dimensions)
+                .recreate_with_dimensions(self.dimensions)
                 .expect("Unsupported dimensions?");
             self.swapchain = new_swapchain;
             self.images = new_images;

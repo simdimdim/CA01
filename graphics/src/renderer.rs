@@ -23,7 +23,7 @@ use vulkano::{
     sync::GpuFuture,
 };
 
-use winit::Window;
+use winit::window::Window;
 
 impl Renderer {
     pub fn new(
@@ -39,6 +39,7 @@ impl Renderer {
             CpuAccessibleBuffer::from_iter(
                 device.clone(),
                 BufferUsage::all(),
+                true,
                 AssetManager::new()
                     .load::<f32>("teapot")
                     .set_scale(0.15)
@@ -95,6 +96,7 @@ impl Renderer {
         let uniform_buffer = CpuAccessibleBuffer::from_iter(
             device.clone(),
             BufferUsage::all(),
+            true,
             vec![Ubo {
                 ar:    [
                     images[0].dimensions()[0] as f32 / 2560.0,
@@ -121,6 +123,7 @@ impl Renderer {
         let data_buffer = CpuAccessibleBuffer::from_iter(
             device.clone(),
             BufferUsage::all(),
+            true,
             {
                 let mut e = input.load::<f32>("teapot");
                 e.model.scale = 0.15;
@@ -179,6 +182,7 @@ impl Renderer {
         self.data_buffer = CpuAccessibleBuffer::from_iter(
             device.clone(),
             BufferUsage::vertex_buffer(),
+            true,
             data_buffer.read().unwrap().iter().cloned(),
         )
         .unwrap();
@@ -224,12 +228,14 @@ impl Renderer {
                 CpuAccessibleBuffer::from_iter(
                     device.clone(),
                     BufferUsage::index_buffer(),
+                    true,
                     e.model.indices.iter().cloned(),
                 )
                 .expect("Failed to create index_buffer"),
                 CpuAccessibleBuffer::from_iter(
                     device.clone(),
                     BufferUsage::all(),
+                    true,
                     {
                         let mut x = vec![];
                         for i in 0..e.len {
@@ -259,7 +265,7 @@ impl Renderer {
             )
         };
         let clear_values = vec![[0.0, 0.0, 0.0, 1.0].into(), 1f32.into()];
-        let (image_num, acquire_future) =
+        let (image_num, _, acquire_future) =
             match swapchain::acquire_next_image(swapchain.clone(), None) {
                 Ok(r) => r,
                 Err(AcquireError::OutOfDate) => {

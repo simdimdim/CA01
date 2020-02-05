@@ -14,7 +14,7 @@ use vulkano::{
     swapchain::{Surface, Swapchain},
     sync::GpuFuture,
 };
-use winit::Window;
+use winit::window::Window;
 
 #[derive(Default, Debug, Clone, Copy)]
 struct Vertex {
@@ -55,7 +55,7 @@ pub struct Graphics {
     swapchain:          Arc<Swapchain<Window>>,
     recreate_swapchain: bool,
     dimensions:         [u32; 2],
-    images:             Vec<Arc<vulkano::image::SwapchainImage<winit::Window>>>,
+    images:             Vec<Arc<vulkano::image::SwapchainImage<Window>>>,
     dynamic_state:      DynamicState,
     depth_buffer:       Arc<AttachmentImage>,
     renderer:           Renderer,
