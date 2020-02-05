@@ -24,13 +24,14 @@ fn main() {
             event: WindowEvent::CursorMoved { position, .. },
             ..
         } => {
-            if [position.x, position.y] != [0; 2] {
-                engine.setmouse([position.x.into(), position.y.into()])
+            if [position.x, position.y] != [0.0f64; 2] {
+                engine.setmouse([position.x, position.y])
             }
         }
         Event::RedrawEventsCleared => {
             //TODO: HiDPI scaling as push constants
             engine.run(recreate_swapchain);
+            recreate_swapchain = false;
         }
         _ => (),
     });
