@@ -3,10 +3,10 @@ use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
+
 fn main() {
     let event_loop = EventLoop::new();
     let mut engine = Engine::<f32>::new(&event_loop);
-    let mut recreate_swapchain = false;
     event_loop.run(move |event, _, control_flow| match event {
         Event::WindowEvent {
             event: WindowEvent::CloseRequested,
@@ -18,7 +18,7 @@ fn main() {
             event: WindowEvent::Resized(_),
             ..
         } => {
-            recreate_swapchain = true;
+            engine.resize_window();
         }
         Event::WindowEvent {
             event: WindowEvent::CursorMoved { position, .. },
@@ -30,8 +30,7 @@ fn main() {
         }
         Event::RedrawEventsCleared => {
             //TODO: HiDPI scaling as push constants
-            engine.run(recreate_swapchain);
-            recreate_swapchain = false;
+            engine.run();
         }
         _ => (),
     });

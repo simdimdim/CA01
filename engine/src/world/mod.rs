@@ -16,9 +16,10 @@ impl<T: Float + From<f32>> World<T> {
     }
 
     pub fn add_object(
-        &self,
-        _e: Entity<T>,
+        &mut self,
+        e: Entity<T>,
     ) -> &Self {
+        self.objects.push(e);
         self
     }
 

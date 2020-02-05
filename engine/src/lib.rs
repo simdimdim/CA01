@@ -14,7 +14,7 @@ pub struct Engine<T: Float + From<f32>> {
     assets:   AssetManager,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub struct World<T: Float + From<f32>> {
     origin:  Quaternion<T>,
     objects: Vec<Entity<T>>,
@@ -36,15 +36,14 @@ impl<T: std::fmt::Debug + Float + From<f32>> Engine<T> {
 
     pub fn setmouse(
         &mut self,
-        mouss: [f64; 2],
+        mouse: [f64; 2],
     ) {
-        self.mouse = mouss;
+        self.mouse = mouse;
     }
 
-    pub fn run(
-        &mut self,
-        recreate_swapchain: bool,
-    ) {
+    pub fn resize_window(&mut self) { self.graphics.recreate_swapchain(); }
+
+    pub fn run(&mut self) {
         // self.graphics.surface
         // &event_loop.run(move |event, _, control_flow| match event {
         //     Event::WindowEvent {
@@ -78,13 +77,12 @@ impl<T: std::fmt::Debug + Float + From<f32>> Engine<T> {
         //     }
         //     _ => (),
         // });
-        self.graphics
-            .render(recreate_swapchain, &self.assets, self.mouse);
+        self.graphics.render(&self.assets, self.mouse);
     }
 
     pub fn create_world() -> World<T> {
-        let world = World::<T>::new();
-        world.add_object(AssetManager::new().load::<T>("cube"));
+        let mut world = World::<T>::new();
+        world.add_object(AssetManager::new().load::<T>("teapot"));
         world
     }
 }

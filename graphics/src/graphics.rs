@@ -162,11 +162,9 @@ impl Graphics {
 
     pub fn render(
         &mut self,
-        remake_swap: bool,
         am: &AssetManager,
         mouse: [f64; 2],
     ) {
-        self.recreate_swapchain = remake_swap;
         self.remake_swapchain();
 
         self.renderer.compute(
@@ -217,6 +215,8 @@ impl Graphics {
         }
         self.recreate_swapchain = false;
     }
+
+    pub fn recreate_swapchain(&mut self) { self.recreate_swapchain = true; }
 }
 
 fn window_size_dependent_setup(

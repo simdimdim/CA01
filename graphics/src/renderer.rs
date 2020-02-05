@@ -41,8 +41,8 @@ impl Renderer {
                 BufferUsage::all(),
                 true,
                 AssetManager::new()
-                    .load::<f32>("teapot")
-                    .set_scale(0.15)
+                    .load::<f32>("sphere")
+                    .set_scale(0.05)
                     .model
                     .positions
                     .iter()
@@ -125,8 +125,9 @@ impl Renderer {
             BufferUsage::all(),
             true,
             {
-                let mut e = input.load::<f32>("teapot");
-                e.model.scale = 0.15;
+                let mut e = input.load::<f32>("sphere");
+                let o = Quaternion::new([1.0, 0.0, 0.0, 0.0]).u_mut().val;
+                e.model.scale = 0.05;
                 let mut x = vec![];
                 for i in 0..e.len {
                     x.push(Vertex {
@@ -137,9 +138,7 @@ impl Renderer {
                             0.0,
                         ]) * e.model.scale)
                             .val,
-                        orient:   Quaternion::new([1.0, 0.0, 0.0, 0.0])
-                            .u_mut()
-                            .val,
+                        orient:   o,
                         normals:  [0.0f32; 4],
                     });
                 }
@@ -214,7 +213,7 @@ impl Renderer {
         //         BufferUsage::vertex_buffer(),
         //         AssetManager::new()
         //             .load::<f32>("teapot")
-        //             .set_scale(0.15)
+        //             .set_scale(0.05)
         //             .model
         //             .positions
         //             .iter()
@@ -223,7 +222,7 @@ impl Renderer {
         //     .unwrap()
         // };
         let (index_buffer, normals_buffer) = {
-            let e = AssetManager::new().load::<f32>("teapot").set_scale(0.15);
+            let e = AssetManager::new().load::<f32>("sphere").set_scale(0.05);
             (
                 CpuAccessibleBuffer::from_iter(
                     device.clone(),
@@ -310,7 +309,7 @@ impl Renderer {
             Ok(future) => {
                 // This wait is required when using NVIDIA or running on macOS.
                 // See https://github.com/vulkano-rs/vulkano/issues/1247
-                future.wait(None).unwrap();
+                // future.wait(None).unwrap(); // winit <=0.19
                 self.previous_frame_end = Some(Box::new(future) as Box<_>);
                 false
             }
