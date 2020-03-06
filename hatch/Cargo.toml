@@ -10,4 +10,4 @@ publish = false
 [dependencies]
 engine = { path = "../engine" }
 common={path="../common"}
-winit="0.21"
+winit="0.22"
