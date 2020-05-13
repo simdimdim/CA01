@@ -4,6 +4,7 @@ use common::{managers::AssetManager, Entity, Quaternion};
 use graphics::Graphics;
 use num_traits::Float;
 use winit::{
+    dpi::PhysicalPosition,
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
 };
@@ -36,9 +37,10 @@ impl<T: std::fmt::Debug + Float + From<f32>> Engine<T> {
 
     pub fn setmouse(
         &mut self,
-        mouse: [f64; 2],
+        mouse: PhysicalPosition<f64>,
     ) {
-        self.mouse = mouse;
+        self.mouse[0] = mouse.x;
+        self.mouse[1] = mouse.y;
     }
 
     pub fn resize_window(&mut self) { self.graphics.recreate_swapchain(); }

@@ -18,7 +18,7 @@ impl AssetManager {
         // let mut names: Vec<String> = vec![];
         for p in assets_paths {
             //discard materials with .0
-            for o in tobj::load_obj(&p).unwrap().0 {
+            for o in tobj::load_obj(&p, true).unwrap().0 {
                 objects.push(o);
             }
             // names.push(p.file_stem().unwrap().to_str().unwrap().to_string());

@@ -4,6 +4,8 @@ use winit::{
     event_loop::{ControlFlow, EventLoop},
 };
 
+pub mod gameplay;
+
 fn main() {
     let event_loop = EventLoop::new();
     let mut engine = Engine::<f32>::new(&event_loop);
@@ -24,8 +26,8 @@ fn main() {
             event: WindowEvent::CursorMoved { position, .. },
             ..
         } => {
-            if [position.x, position.y] != [0.0f64; 2] {
-                engine.setmouse([position.x, position.y])
+            if position.x != 0.0f64 && position.y != 0.0f64 {
+                engine.setmouse(position)
             }
         }
         Event::RedrawEventsCleared => {
