@@ -158,19 +158,18 @@ impl Renderer {
                 .build()
                 .unwrap(),
         );
-        let compute_command_buffer = Arc::new(
+        let mut compute_builder =
             AutoCommandBufferBuilder::new(device.clone(), queue.family())
-                .unwrap()
-                .dispatch(
-                    [1024, 1, 1],
-                    self.compute_pipeline.clone(),
-                    set.clone(),
-                    (),
-                )
-                .unwrap()
-                .build()
-                .unwrap(),
-        );
+                .unwrap();
+        compute_builder
+            .dispatch(
+                [1024, 1, 1],
+                self.compute_pipeline.clone(),
+                set.clone(),
+                (),
+            )
+            .unwrap();
+        let compute_command_buffer = Arc::new(compute_builder.build().unwrap());
 
         let finished = compute_command_buffer.execute(queue).unwrap();
         finished
@@ -272,29 +271,28 @@ impl Renderer {
                 }
                 Err(err) => panic!("{:?}", err),
             };
-        let command_buffer = Arc::new(
+        let mut command_buffer_builder =
             AutoCommandBufferBuilder::primary(device.clone(), queue.family())
-                .unwrap()
-                .begin_render_pass(
-                    framebuffers[image_num].clone(),
-                    false,
-                    clear_values,
-                )
-                .unwrap()
-                .draw_indexed(
-                    self.pipeline.clone(),
-                    &dynamic_state,
-                    vec![self.data_buffer.clone(), normals_buffer],
-                    index_buffer,
-                    (),
-                    (),
-                )
-                .unwrap()
-                .end_render_pass()
-                .unwrap()
-                .build()
-                .unwrap(),
-        );
+                .unwrap();
+        command_buffer_builder
+            .begin_render_pass(
+                framebuffers[image_num].clone(),
+                false,
+                clear_values,
+            )
+            .unwrap()
+            .draw_indexed(
+                self.pipeline.clone(),
+                &dynamic_state,
+                vec![self.data_buffer.clone(), normals_buffer],
+                index_buffer,
+                (),
+                (),
+            )
+            .unwrap()
+            .end_render_pass()
+            .unwrap();
+        let command_buffer = Arc::new(command_buffer_builder.build().unwrap());
 
         let future = self
             .previous_frame_end
