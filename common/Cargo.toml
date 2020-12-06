@@ -11,5 +11,5 @@ publish = false
 vulkano={ git="https://github.com/simdimdim/vulkano", branch = "master"}
 vulkano-shaders={git="https://github.com/simdimdim/vulkano", branch = "master"}
 
-num-traits="*"
-tobj="*"
+num-traits= "0.2.14"
+tobj= "2.0.2"

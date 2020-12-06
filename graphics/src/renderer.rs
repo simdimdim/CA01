@@ -9,7 +9,12 @@ use common::{managers::AssetManager, Quaternion};
 use std::sync::Arc;
 use vulkano::{
     buffer::{BufferAccess, BufferUsage, CpuAccessibleBuffer},
-    command_buffer::{AutoCommandBufferBuilder, CommandBuffer, DynamicState},
+    command_buffer::{
+        AutoCommandBufferBuilder,
+        CommandBuffer,
+        DynamicState,
+        SubpassContents,
+    },
     descriptor::{
         descriptor_set::PersistentDescriptorSet,
         pipeline_layout::PipelineLayoutAbstract,
@@ -65,8 +70,13 @@ impl Renderer {
                 .unwrap(),
         );
         let compute_pipeline = Arc::new(
-            ComputePipeline::new(device.clone(), &cs.main_entry_point(), &())
-                .expect("failed to create compute pipeline"),
+            ComputePipeline::new(
+                device.clone(),
+                &cs.main_entry_point(),
+                &(),
+                None,
+            )
+            .expect("failed to create compute pipeline"),
         );
         let compute_layout =
             compute_pipeline.layout().descriptor_set_layout(0).unwrap();
@@ -277,7 +287,7 @@ impl Renderer {
         command_buffer_builder
             .begin_render_pass(
                 framebuffers[image_num].clone(),
-                false,
+                SubpassContents::Inline,
                 clear_values,
             )
             .unwrap()

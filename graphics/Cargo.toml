@@ -8,11 +8,11 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-winit="0.22"
+winit= "0.23.0"
 vulkano={ git="https://github.com/simdimdim/vulkano", branch = "master"}
 vulkano-win={ git="https://github.com/simdimdim/vulkano", branch = "master"}
 vulkano-shaders={ git="https://github.com/simdimdim/vulkano", branch = "master"}
 vk-sys={ git="https://github.com/simdimdim/vulkano", branch = "master" }
 common={path="../common"}
-num-traits="*"
-tobj="*"
+num-traits= "0.2.14"
+tobj= "2.0.2"
