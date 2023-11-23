@@ -16,7 +16,7 @@ reorder_impl_items = true
 binop_separator = "Back"
 
 fn_single_line = true
-fn_args_layout="Vertical"
+fn_params_layout ="Vertical"
 # fn_call_style = "Block"
 
 wrap_comments = true

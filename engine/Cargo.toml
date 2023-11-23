@@ -2,7 +2,7 @@
 name = "engine"
 version = "0.1.0"
 authors = ["simdimdim <simdimdim@gmail.com>"]
-edition = "2018"
+edition = "2021"
 publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -10,5 +10,5 @@ publish = false
 [dependencies]
 graphics= { path = "../graphics" }
 common= { path = "../common" }
-winit= "0.23.0"
-num-traits= "0.2.14"
+winit= "0.29.3"
+num-traits= "0.2.17"
